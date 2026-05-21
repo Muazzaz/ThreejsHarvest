@@ -1,6 +1,6 @@
-import { create } from 'zustand';
-import type { FruitType } from '../lib/products';
-import { PRODUCTS } from '../lib/products';
+import { create } from "zustand";
+import type { FruitType } from "../lib/products";
+import { PRODUCTS } from "../lib/products";
 
 export interface CartItem {
   id: FruitType;
@@ -10,8 +10,8 @@ export interface CartItem {
   weightKg: number;
 }
 
-export type AppMode = 'explore' | 'checkout';
-export type CheckoutStep = 'cart' | 'shipping' | 'payment' | 'success';
+export type AppMode = "explore" | "checkout";
+export type CheckoutStep = "cart" | "shipping" | "payment" | "success";
 
 interface OrderDetails {
   name: string;
@@ -57,13 +57,13 @@ interface OrchardStore {
 }
 
 export const useOrchardStore = create<OrchardStore>((set, get) => ({
-  mode: 'explore',
+  mode: "explore",
   setMode: (m) => set({ mode: m }),
 
-  checkoutStep: 'cart',
+  checkoutStep: "cart",
   setCheckoutStep: (s) => set({ checkoutStep: s }),
 
-  orderDetails: { name: '', phone: '', address: '', district: '' },
+  orderDetails: { name: "", phone: "", address: "", district: "" },
   setOrderDetails: (d) =>
     set((state) => ({ orderDetails: { ...state.orderDetails, ...d } })),
   orderId: null,
@@ -77,7 +77,7 @@ export const useOrchardStore = create<OrchardStore>((set, get) => ({
       if (existing) {
         return {
           cart: state.cart.map((i) =>
-            i.id === id ? { ...i, weightKg: i.weightKg + kg } : i
+            i.id === id ? { ...i, weightKg: i.weightKg + kg } : i,
           ),
         };
       }

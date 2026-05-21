@@ -1,5 +1,6 @@
-import { useMemo, useRef } from 'react';
+/* eslint-disable react-hooks/purity */
 import { useFrame } from '@react-three/fiber';
+import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { PRODUCTS, type FruitType } from '../../lib/products';
 import { getTerrainHeight } from '../../lib/terrain';

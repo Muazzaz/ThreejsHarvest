@@ -1,8 +1,8 @@
-import { Suspense } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import OrchadCanvas from './components/scene/OrchadCanvas';
-import HUD from './components/hud/HUD';
+import { Suspense } from 'react';
 import CheckoutFlow from './components/checkout/CheckoutFlow';
+import HUD from './components/hud/HUD';
+import OrchadCanvas from './components/scene/OrchadCanvas';
 import { useOrchardStore } from './store/useOrchardStore';
 
 function LoadingScreen() {
@@ -51,7 +51,7 @@ export default function App() {
             <Suspense fallback={<LoadingScreen />}>
               <OrchadCanvas />
             </Suspense>
-            
+
             {/* 2D HUD overlaid with pointer-events: none at root */}
             <div className="fixed inset-0 pointer-events-none z-20">
               <HUD />

@@ -9,28 +9,28 @@ import { TREE_PLACEMENTS } from '../../lib/products';
 import { getTerrainHeight } from '../../lib/terrain';
 import { useOrchardStore } from '../../store/useOrchardStore';
 
-const ACCEL          = 38;   // speed units per second forward
-const BRAKE          = 42;   // braking deceleration per second
-const REVERSE_ACCEL  = 14;   // reverse acceleration speed per second
-const DECEL          = 15;   // passive coasting decay per second
-const MAX_SPEED      = 15;   // max forward m/s
-const MAX_REV_SPEED  = 5.5;  // max reverse m/s
-const STEER_VEL      = 2.1;  // steer speed rad/s
+const ACCEL = 38;   // speed units per second forward
+const BRAKE = 42;   // braking deceleration per second
+const REVERSE_ACCEL = 14;   // reverse acceleration speed per second
+const DECEL = 15;   // passive coasting decay per second
+const MAX_SPEED = 15;   // max forward m/s
+const MAX_REV_SPEED = 5.5;  // max reverse m/s
+const STEER_VEL = 2.1;  // steer speed rad/s
 const HARVEST_RADIUS = 14;
 
 // Pre-allocated vectors — never create new ones in useFrame
-const _forward    = new THREE.Vector3();
-const _camTarget  = new THREE.Vector3();
-const _camPos     = new THREE.Vector3();
-const _quat       = new THREE.Quaternion();
+const _forward = new THREE.Vector3();
+const _camTarget = new THREE.Vector3();
+const _camPos = new THREE.Vector3();
+const _quat = new THREE.Quaternion();
 const _groundNorm = new THREE.Vector3();
-const _carRight   = new THREE.Vector3();
-const _carFwd     = new THREE.Vector3();
-const _basisMat   = new THREE.Matrix4();
+const _carRight = new THREE.Vector3();
+const _carFwd = new THREE.Vector3();
+const _basisMat = new THREE.Matrix4();
 
 export default function Vehicle() {
   const chassisRef = useRef<RapierRigidBody>(null);
-  const meshRef    = useRef<THREE.Group>(null);
+  const meshRef = useRef<THREE.Group>(null);
   const { setNearbyFruit, addToCart, setHarvestCooldown } = useOrchardStore();
 
   useFrame(({ camera }, delta) => {
@@ -38,9 +38,9 @@ export default function Vehicle() {
     if (!body) return;
 
     const keys = getKeys();
-    const vel  = body.linvel();
-    const pos  = body.translation();
-    const rot  = body.rotation();
+    const vel = body.linvel();
+    const pos = body.translation();
+    const rot = body.rotation();
 
     _quat.set(rot.x, rot.y, rot.z, rot.w);
     // Forward direction is -Z in local space
@@ -65,9 +65,9 @@ export default function Vehicle() {
 
     // Incline along the forward direction
     const hFront = getTerrainHeight(pos.x + _forward.x * 0.8, pos.z + _forward.z * 0.8);
-    const hBack  = getTerrainHeight(pos.x - _forward.x * 0.8, pos.z - _forward.z * 0.8);
+    const hBack = getTerrainHeight(pos.x - _forward.x * 0.8, pos.z - _forward.z * 0.8);
     const slopeIncline = hFront - hBack; // positive = climbing, negative = descending
-    
+
     // Tweak gravity multiplier for realistic hill feel
     const hillGravityAccel = slopeIncline * 11.0; // slightly reduced from 14.0 for better climbing feel
 
@@ -124,7 +124,7 @@ export default function Vehicle() {
       let yAngVel = 0;
       if (Math.abs(currentFwdSpeed) > 0.1) {
         const steerSign = currentFwdSpeed >= 0 ? 1 : -1; // flip steer direction when reversing
-        if (keys.left)  yAngVel =  STEER_VEL * steerSign;
+        if (keys.left) yAngVel = STEER_VEL * steerSign;
         if (keys.right) yAngVel = -STEER_VEL * steerSign;
       }
       body.setAngvel({ x: 0, y: yAngVel, z: 0 }, true);
@@ -136,11 +136,11 @@ export default function Vehicle() {
     // ── 7. SYNC VISUAL MESH WITH SLOPE ──────────────────────────────────────
     if (meshRef.current) {
       meshRef.current.position.set(pos.x, visualY, pos.z);
-      
+
       // Construct lookAt matrix to align visual chassis perfectly with terrain normal and forward dir
       _carRight.crossVectors(_forward, _groundNorm).normalize();
       _carFwd.crossVectors(_groundNorm, _carRight).normalize();
-      
+
       _basisMat.makeBasis(_carRight, _groundNorm, _carFwd.negate());
       meshRef.current.quaternion.setFromRotationMatrix(_basisMat);
     }
@@ -236,7 +236,7 @@ export default function Vehicle() {
           ))
         )}
         {/* Headlights */}
-        <pointLight position={[ 0.5, 0.15, 1.7]} color="#fef9c3" intensity={10} distance={14} />
+        <pointLight position={[0.5, 0.15, 1.7]} color="#fef9c3" intensity={10} distance={14} />
         <pointLight position={[-0.5, 0.15, 1.7]} color="#fef9c3" intensity={10} distance={14} />
       </group>
     </>

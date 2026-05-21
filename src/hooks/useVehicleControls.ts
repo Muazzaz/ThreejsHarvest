@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
 export interface Keys {
   forward: boolean;
@@ -12,17 +12,17 @@ export interface Keys {
 }
 
 const KEYS: Record<string, keyof Keys> = {
-  KeyW: 'forward',
-  ArrowUp: 'forward',
-  KeyS: 'backward',
-  ArrowDown: 'backward',
-  KeyA: 'left',
-  ArrowLeft: 'left',
-  KeyD: 'right',
-  ArrowRight: 'right',
-  Space: 'harvest',
-  ShiftLeft: 'brake',
-  ShiftRight: 'brake',
+  KeyW: "forward",
+  ArrowUp: "forward",
+  KeyS: "backward",
+  ArrowDown: "backward",
+  KeyA: "left",
+  ArrowLeft: "left",
+  KeyD: "right",
+  ArrowRight: "right",
+  Space: "harvest",
+  ShiftLeft: "brake",
+  ShiftRight: "brake",
 };
 
 const keys: Keys = {
@@ -46,7 +46,7 @@ export function useVehicleControls() {
       const key = KEYS[e.code];
       if (key) {
         keys[key] = true;
-        if (e.code === 'Space') e.preventDefault();
+        if (e.code === "Space") e.preventDefault();
       }
     };
     const onKeyUp = (e: KeyboardEvent) => {
@@ -54,11 +54,11 @@ export function useVehicleControls() {
       if (key) keys[key] = false;
     };
 
-    window.addEventListener('keydown', onKeyDown);
-    window.addEventListener('keyup', onKeyUp);
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
     return () => {
-      window.removeEventListener('keydown', onKeyDown);
-      window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
     };
   }, []);
 

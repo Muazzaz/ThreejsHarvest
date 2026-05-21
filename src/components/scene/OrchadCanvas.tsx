@@ -1,12 +1,12 @@
+import { Environment, Sky } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
-import { Sky, Environment } from '@react-three/drei';
 import { Physics } from '@react-three/rapier';
 import { Suspense } from 'react';
+import { useVehicleControls } from '../../hooks/useVehicleControls';
+import ModernElements from './ModernElements';
+import Orchard from './Orchard';
 import Terrain from './Terrain';
 import Vehicle from './Vehicle';
-import Orchard from './Orchard';
-import ModernElements from './ModernElements';
-import { useVehicleControls } from '../../hooks/useVehicleControls';
 
 function SceneContent() {
   useVehicleControls(); // register key listeners

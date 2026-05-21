@@ -1,5 +1,5 @@
-import FruitTree from './FruitTree';
 import { TREE_PLACEMENTS } from '../../lib/products';
+import FruitTree from './FruitTree';
 
 export default function Orchard() {
   return (

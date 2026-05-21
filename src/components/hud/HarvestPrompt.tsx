@@ -1,6 +1,6 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { useOrchardStore } from '../../store/useOrchardStore';
+import { AnimatePresence, motion } from 'framer-motion';
 import { PRODUCTS } from '../../lib/products';
+import { useOrchardStore } from '../../store/useOrchardStore';
 
 export default function HarvestPrompt() {
   const { nearbyFruit, harvestCooldown } = useOrchardStore();
@@ -23,11 +23,10 @@ export default function HarvestPrompt() {
               <div className="text-sm font-bold text-slate-100">{product.name}</div>
               <div className="text-xs text-emerald-400 font-semibold mt-0.5">৳{product.pricePerKg}/kg</div>
             </div>
-            <div className={`text-[10px] font-black tracking-widest px-2.5 py-1.5 rounded-xl transition-all duration-300 border select-none ${
-              harvestCooldown 
-                ? 'bg-emerald-600/30 border-emerald-500 text-emerald-300' 
-                : 'bg-emerald-500/20 border-emerald-400 text-emerald-400'
-            }`}>
+            <div className={`text-[10px] font-black tracking-widest px-2.5 py-1.5 rounded-xl transition-all duration-300 border select-none ${harvestCooldown
+              ? 'bg-emerald-600/30 border-emerald-500 text-emerald-300'
+              : 'bg-emerald-500/20 border-emerald-400 text-emerald-400'
+              }`}>
               {harvestCooldown ? '✓ ADDED!' : 'SPACE'}
             </div>
           </div>

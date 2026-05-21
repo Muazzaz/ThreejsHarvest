@@ -1,6 +1,6 @@
 import { useOrchardStore } from '../../store/useOrchardStore';
-import HarvestPrompt from './HarvestPrompt';
 import CartPanel from './CartPanel';
+import HarvestPrompt from './HarvestPrompt';
 
 export default function HUD() {
   const { totalItems, totalWeight, totalPrice, setCartOpen, cartOpen, setMode } =
@@ -11,7 +11,7 @@ export default function HUD() {
   return (
     <>
       {/* Top bar */}
-      <div className="fixed top-0 left-0 right-0 flex justify-between items-center p-4 md:px-8 bg-gradient-to-b from-[#0a1628]/80 to-transparent backdrop-blur-xs pointer-events-auto z-20">
+      <div className="fixed top-0 left-0 right-0 flex justify-between items-center p-4 md:px-8 bg-linear-to-b from-[#0a1628]/80 to-transparent backdrop-blur-xs pointer-events-auto z-20">
         {/* Logo */}
         <div className="flex items-center gap-2.5 pointer-events-none">
           <span className="text-3xl select-none">🌿</span>
@@ -22,7 +22,7 @@ export default function HUD() {
         </div>
 
         {/* Cart button */}
-        <button 
+        <button
           className="flex items-center gap-2.5 bg-[#0f1f35]/50 border border-emerald-500/20 hover:bg-emerald-500/15 hover:border-emerald-400 rounded-full px-4 py-2 text-slate-100 text-sm font-sans cursor-pointer backdrop-blur-md transition-all duration-200 relative select-none shadow-md"
           onClick={() => setCartOpen(!cartOpen)}
         >

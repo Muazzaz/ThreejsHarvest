@@ -1,7 +1,7 @@
+import { RigidBody } from '@react-three/rapier';
 import { useMemo } from 'react';
 import * as THREE from 'three';
-import { RigidBody } from '@react-three/rapier';
-import { TERRAIN_SIZE, TERRAIN_SEGMENTS, getTerrainHeight } from '../../lib/terrain';
+import { TERRAIN_SEGMENTS, TERRAIN_SIZE, getTerrainHeight } from '../../lib/terrain';
 
 export default function Terrain() {
   const S = TERRAIN_SIZE;
@@ -28,22 +28,22 @@ export default function Terrain() {
       {/* ── Main rolling hills (physics trimesh + visual mesh) ── */}
       <RigidBody type="fixed" colliders="trimesh">
         <mesh receiveShadow geometry={hillsGeometry}>
-          <meshStandardMaterial 
-            color="#3a7d44" 
-            roughness={0.72} 
-            metalness={0.1} 
-            flatShading={false} 
+          <meshStandardMaterial
+            color="#3a7d44"
+            roughness={0.72}
+            metalness={0.1}
+            flatShading={false}
           />
         </mesh>
       </RigidBody>
 
       {/* ── Subtle wireframe grid overlay following the curves of the hills ── */}
       <mesh geometry={hillsGeometry} position={[0, 0.015, 0]}>
-        <meshBasicMaterial 
-          color="#2d6935" 
-          wireframe 
-          transparent 
-          opacity={0.18} 
+        <meshBasicMaterial
+          color="#2d6935"
+          wireframe
+          transparent
+          opacity={0.18}
         />
       </mesh>
 

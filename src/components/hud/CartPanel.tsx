@@ -41,7 +41,7 @@ export default function CartPanel() {
 
             <div className="flex-1 overflow-y-auto py-4 px-6 flex flex-col gap-3">
               {cart.length === 0 ? (
-                <div 
+                <div
                   className="flex flex-col items-center gap-3 text-center select-none"
                   style={{ padding: '64px 20px' }}
                 >
@@ -52,8 +52,8 @@ export default function CartPanel() {
                 </div>
               ) : (
                 cart.map((item) => (
-                  <div 
-                    key={item.id} 
+                  <div
+                    key={item.id}
                     className="flex items-center gap-3 bg-white/4 border border-white/6 rounded-xl hover:border-emerald-500/10 transition-all duration-200 shadow-sm"
                     style={{ padding: '12px 14px' }}
                   >

@@ -1,8 +1,8 @@
-import { createNoise2D } from 'simplex-noise';
+import { createNoise2D } from "simplex-noise";
 
 export const TERRAIN_SIZE = 200;
 export const TERRAIN_SEGMENTS = 70; // high segment count for smooth hills
-export const HEIGHT_SCALE = 5.0;    // maximum height of Khagrachari hills
+export const HEIGHT_SCALE = 5.0; // maximum height of Khagrachari hills
 
 const noise2D = createNoise2D();
 
