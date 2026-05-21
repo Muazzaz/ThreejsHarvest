@@ -1,27 +1,32 @@
-import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { RigidBody, CuboidCollider } from '@react-three/rapier';
 import type { RapierRigidBody } from '@react-three/rapier';
+import { CuboidCollider, RigidBody } from '@react-three/rapier';
+import { useRef } from 'react';
 import * as THREE from 'three';
 import { getKeys } from '../../hooks/useVehicleControls';
-import { useOrchardStore } from '../../store/useOrchardStore';
-import { TREE_PLACEMENTS } from '../../lib/products';
 import type { FruitType } from '../../lib/products';
+import { TREE_PLACEMENTS } from '../../lib/products';
+import { getTerrainHeight } from '../../lib/terrain';
+import { useOrchardStore } from '../../store/useOrchardStore';
 
-const ACCEL          = 22;   // speed units per second forward
-const BRAKE          = 36;   // braking deceleration per second
-const REVERSE_ACCEL  = 12;   // reverse acceleration speed per second
-const DECEL          = 14;   // passive coasting decay per second
-const MAX_SPEED      = 11;   // max forward m/s
-const MAX_REV_SPEED  = 4.5;  // max reverse m/s
-const STEER_VEL      = 1.9;  // steer speed rad/s
+const ACCEL          = 38;   // speed units per second forward
+const BRAKE          = 42;   // braking deceleration per second
+const REVERSE_ACCEL  = 14;   // reverse acceleration speed per second
+const DECEL          = 15;   // passive coasting decay per second
+const MAX_SPEED      = 15;   // max forward m/s
+const MAX_REV_SPEED  = 5.5;  // max reverse m/s
+const STEER_VEL      = 2.1;  // steer speed rad/s
 const HARVEST_RADIUS = 14;
 
 // Pre-allocated vectors — never create new ones in useFrame
-const _forward = new THREE.Vector3();
-const _camTarget = new THREE.Vector3();
-const _camPos    = new THREE.Vector3();
-const _quat      = new THREE.Quaternion();
+const _forward    = new THREE.Vector3();
+const _camTarget  = new THREE.Vector3();
+const _camPos     = new THREE.Vector3();
+const _quat       = new THREE.Quaternion();
+const _groundNorm = new THREE.Vector3();
+const _carRight   = new THREE.Vector3();
+const _carFwd     = new THREE.Vector3();
+const _basisMat   = new THREE.Matrix4();
 
 export default function Vehicle() {
   const chassisRef = useRef<RapierRigidBody>(null);
@@ -35,7 +40,7 @@ export default function Vehicle() {
     const keys = getKeys();
     const vel  = body.linvel();
     const pos  = body.translation();
-    const rot  = body.rotation();  // needed for _quat
+    const rot  = body.rotation();
 
     _quat.set(rot.x, rot.y, rot.z, rot.w);
     // Forward direction is -Z in local space
@@ -43,29 +48,67 @@ export default function Vehicle() {
     _forward.y = 0; // keep on horizontal plane
     _forward.normalize();
 
+    // ── SLOPE DETECTOR (Hill Gravity Effect) ──
+    // Samples the terrain height slightly around the vehicle to estimate
+    // the slope normal and calculate pitch incline.
+    const sampleDist = 0.5;
+    const hL = getTerrainHeight(pos.x - sampleDist, pos.z);
+    const hR = getTerrainHeight(pos.x + sampleDist, pos.z);
+    const hB = getTerrainHeight(pos.x, pos.z - sampleDist);
+    const hF = getTerrainHeight(pos.x, pos.z + sampleDist);
+
+    _groundNorm.set(
+      (hL - hR) / (2 * sampleDist),
+      1.0,
+      (hB - hF) / (2 * sampleDist)
+    ).normalize();
+
+    // Incline along the forward direction
+    const hFront = getTerrainHeight(pos.x + _forward.x * 0.8, pos.z + _forward.z * 0.8);
+    const hBack  = getTerrainHeight(pos.x - _forward.x * 0.8, pos.z - _forward.z * 0.8);
+    const slopeIncline = hFront - hBack; // positive = climbing, negative = descending
+    
+    // Tweak gravity multiplier for realistic hill feel
+    const hillGravityAccel = slopeIncline * 11.0; // slightly reduced from 14.0 for better climbing feel
+
     // Current forward speed on the horizontal plane
     let currentFwdSpeed = _forward.x * vel.x + _forward.z * vel.z;
 
-    // ── 1. ENGINE ACCELERATION AND BRAKING ─────────────────────────────────
+    // ── 1. ENGINE ACCELERATION AND BRAKING (WITH HILL RESISTANCE) ───────────
     if (keys.forward) {
-      // Accelerate forward
-      currentFwdSpeed = Math.min(currentFwdSpeed + ACCEL * delta, MAX_SPEED);
+      // Accelerate forward, fought slightly by gravity but with a high guaranteed minimum engine power
+      const activeAccel = Math.max(14.0, ACCEL - hillGravityAccel * 0.8);
+      const uphillSpeedCap = Math.max(10.5, MAX_SPEED - hillGravityAccel * 0.4);
+      currentFwdSpeed = Math.min(
+        currentFwdSpeed + activeAccel * delta,
+        uphillSpeedCap
+      );
     } else if (keys.backward) {
       if (currentFwdSpeed > 0.25) {
         // Brake hard (rapid deceleration toward 0)
         currentFwdSpeed = Math.max(currentFwdSpeed - BRAKE * delta, 0);
       } else {
-        // Reverse gear
-        currentFwdSpeed = Math.max(currentFwdSpeed - REVERSE_ACCEL * delta, -MAX_REV_SPEED);
+        // Reverse gear (assisted by hill gravity going down, fought going up)
+        const activeReverseAccel = Math.max(6.0, REVERSE_ACCEL + hillGravityAccel * 0.5);
+        currentFwdSpeed = Math.max(
+          currentFwdSpeed - activeReverseAccel * delta,
+          -MAX_REV_SPEED
+        );
       }
     } else {
-      // Passive coasting friction to stop
+      // Passive coasting friction OR rolling down the hill if slope is steep!
+      const rollForce = hillGravityAccel * 1.3;
       if (currentFwdSpeed > 0.1) {
-        currentFwdSpeed = Math.max(currentFwdSpeed - DECEL * delta, 0);
+        currentFwdSpeed = Math.max(currentFwdSpeed - (DECEL + rollForce) * delta, -MAX_REV_SPEED);
       } else if (currentFwdSpeed < -0.1) {
-        currentFwdSpeed = Math.min(currentFwdSpeed + DECEL * delta, 0);
+        currentFwdSpeed = Math.min(currentFwdSpeed + (DECEL - rollForce) * delta, MAX_SPEED);
       } else {
-        currentFwdSpeed = 0;
+        // Roll down the hill if slope is steep enough to overcome static friction!
+        if (Math.abs(rollForce) > 2.2) {
+          currentFwdSpeed -= rollForce * delta;
+        } else {
+          currentFwdSpeed = 0;
+        }
       }
     }
 
@@ -87,17 +130,26 @@ export default function Vehicle() {
       body.setAngvel({ x: 0, y: yAngVel, z: 0 }, true);
     }
 
-    // ── 7. SYNC VISUAL MESH ─────────────────────────────────────────────────
+    // Snap visual chassis to ground height under the car so it follows terrain curves perfectly
+    const visualY = getTerrainHeight(pos.x, pos.z) + 0.38; // 0.38 offset for wheels/chassis alignment
+
+    // ── 7. SYNC VISUAL MESH WITH SLOPE ──────────────────────────────────────
     if (meshRef.current) {
-      meshRef.current.position.set(pos.x, pos.y, pos.z);
-      meshRef.current.quaternion.copy(_quat);
+      meshRef.current.position.set(pos.x, visualY, pos.z);
+      
+      // Construct lookAt matrix to align visual chassis perfectly with terrain normal and forward dir
+      _carRight.crossVectors(_forward, _groundNorm).normalize();
+      _carFwd.crossVectors(_groundNorm, _carRight).normalize();
+      
+      _basisMat.makeBasis(_carRight, _groundNorm, _carFwd.negate());
+      meshRef.current.quaternion.setFromRotationMatrix(_basisMat);
     }
 
-    // ── 8. SMOOTH CAMERA FOLLOW ─────────────────────────────────────────────
-    _camTarget.set(pos.x, pos.y + 1.5, pos.z);
+    // ── 8. SMOOTH CAMERA FOLLOW SNAPPED TO HILL HEIGHT ──────────────────────
+    _camTarget.set(pos.x, visualY + 1.2, pos.z);
     _camPos.set(
       pos.x - _forward.x * 12,
-      pos.y + 7,
+      visualY + 6.5,
       pos.z - _forward.z * 12
     );
     camera.position.lerp(_camPos, Math.min(delta * 5, 1));

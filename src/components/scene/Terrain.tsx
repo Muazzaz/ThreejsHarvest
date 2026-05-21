@@ -1,60 +1,83 @@
+import { useMemo } from 'react';
+import * as THREE from 'three';
 import { RigidBody } from '@react-three/rapier';
-import { TERRAIN_SIZE } from '../../lib/terrain';
-
-// Ground is a solid 0.5m-thick box slab so Rapier auto-generates
-// a perfect CuboidCollider with zero configuration needed.
-// Top surface sits exactly at y = 0.
+import { TERRAIN_SIZE, TERRAIN_SEGMENTS, getTerrainHeight } from '../../lib/terrain';
 
 export default function Terrain() {
   const S = TERRAIN_SIZE;
 
+  // Generate the rolling hills geometry dynamically using our noise function
+  const hillsGeometry = useMemo(() => {
+    const geo = new THREE.PlaneGeometry(S, S, TERRAIN_SEGMENTS, TERRAIN_SEGMENTS);
+    geo.rotateX(-Math.PI / 2); // align plane with the ground plane (XZ)
+
+    const posAttr = geo.attributes.position;
+    for (let i = 0; i < posAttr.count; i++) {
+      const vx = posAttr.getX(i);
+      const vz = posAttr.getZ(i);
+      const vy = getTerrainHeight(vx, vz);
+      posAttr.setY(i, vy);
+    }
+
+    geo.computeVertexNormals(); // update light reflections for smooth 3D curves
+    return geo;
+  }, [S]);
+
   return (
     <group>
-      {/* ── Main ground slab (physics + visual) ── */}
-      <RigidBody type="fixed">
-        <mesh receiveShadow position={[0, -0.25, 0]}>
-          <boxGeometry args={[S, 0.5, S]} />
-          <meshLambertMaterial color="#3a7d44" />
+      {/* ── Main rolling hills (physics trimesh + visual mesh) ── */}
+      <RigidBody type="fixed" colliders="trimesh">
+        <mesh receiveShadow geometry={hillsGeometry}>
+          <meshStandardMaterial 
+            color="#3a7d44" 
+            roughness={0.72} 
+            metalness={0.1} 
+            flatShading={false} 
+          />
         </mesh>
       </RigidBody>
 
-      {/* ── Subtle grid overlay for depth / scale ── */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
-        <planeGeometry args={[S, S, 24, 24]} />
-        <meshBasicMaterial color="#2d6935" wireframe transparent opacity={0.15} />
+      {/* ── Subtle wireframe grid overlay following the curves of the hills ── */}
+      <mesh geometry={hillsGeometry} position={[0, 0.015, 0]}>
+        <meshBasicMaterial 
+          color="#2d6935" 
+          wireframe 
+          transparent 
+          opacity={0.18} 
+        />
       </mesh>
 
-      {/* ── Boundary wall slabs (solid, invisible) ── */}
+      {/* ── Boundary wall slabs (solid, invisible physics boundaries) ── */}
       {/* North */}
       <RigidBody type="fixed">
-        <mesh position={[0, 5, -S / 2 - 0.5]}>
-          <boxGeometry args={[S + 2, 10, 1]} />
+        <mesh position={[0, 15, -S / 2 - 0.5]}>
+          <boxGeometry args={[S + 2, 40, 1]} />
           <meshBasicMaterial visible={false} />
         </mesh>
       </RigidBody>
       {/* South */}
       <RigidBody type="fixed">
-        <mesh position={[0, 5, S / 2 + 0.5]}>
-          <boxGeometry args={[S + 2, 10, 1]} />
+        <mesh position={[0, 15, S / 2 + 0.5]}>
+          <boxGeometry args={[S + 2, 40, 1]} />
           <meshBasicMaterial visible={false} />
         </mesh>
       </RigidBody>
       {/* West */}
       <RigidBody type="fixed">
-        <mesh position={[-S / 2 - 0.5, 5, 0]}>
-          <boxGeometry args={[1, 10, S + 2]} />
+        <mesh position={[-S / 2 - 0.5, 15, 0]}>
+          <boxGeometry args={[1, 40, S + 2]} />
           <meshBasicMaterial visible={false} />
         </mesh>
       </RigidBody>
       {/* East */}
       <RigidBody type="fixed">
-        <mesh position={[S / 2 + 0.5, 5, 0]}>
-          <boxGeometry args={[1, 10, S + 2]} />
+        <mesh position={[S / 2 + 0.5, 15, 0]}>
+          <boxGeometry args={[1, 40, S + 2]} />
           <meshBasicMaterial visible={false} />
         </mesh>
       </RigidBody>
 
-      {/* ── Decorative start pad ── */}
+      {/* ── Decorative start pad (flat because center is flattened) ── */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
         <circleGeometry args={[5, 32]} />
         <meshBasicMaterial color="#4ade80" transparent opacity={0.3} />
