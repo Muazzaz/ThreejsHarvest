@@ -62,7 +62,7 @@ function Nozzle({ x, z }: { x: number; z: number }) {
 }
 
 // Zone sign board
-function SignBoard({ x, z, label }: { x: number; z: number; label: string }) {
+function SignBoard({ x, z }: { x: number; z: number }) {
   const y = getTerrainHeight(x, z) + 2.5;
   return (
     <group position={[x, y, z]}>
@@ -98,9 +98,9 @@ export default function ModernElements() {
       <Nozzle x={68} z={25} />
 
       {/* Zone signs */}
-      <SignBoard x={62} z={0} label="🍈 Guava Zone" />
-      <SignBoard x={5} z={-68} label="🥭 Mango Grove" />
-      <SignBoard x={-62} z={20} label="🍒 Jujube" />
+      <SignBoard x={62} z={0} />
+      <SignBoard x={5} z={-68} />
+      <SignBoard x={-62} z={20} />
 
       {/* Small weather station */}
       <group position={[0, getTerrainHeight(0, -30), -30]}>
