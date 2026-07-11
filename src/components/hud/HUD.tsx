@@ -21,21 +21,40 @@ export default function HUD() {
           </div>
         </div>
 
-        {/* Cart button */}
-        <button
-          className="flex items-center gap-2.5 bg-[#0f1f35]/50 border border-emerald-500/20 hover:bg-emerald-500/15 hover:border-emerald-400 rounded-full px-4 py-2 text-slate-100 text-sm font-sans cursor-pointer backdrop-blur-md transition-all duration-200 relative select-none shadow-md"
-          onClick={() => setCartOpen(!cartOpen)}
-        >
-          <span className="text-lg">🛒</span>
-          {count > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 bg-emerald-500 text-white rounded-full w-5 h-5 text-[10px] font-black flex items-center justify-center shadow-md animate-pulse">
-              {count}
+        {/* Right actions */}
+        <div className="flex items-center gap-2.5">
+          {/* Home button */}
+          <button
+            className="flex items-center gap-1.5 bg-[#0f1f35]/50 border border-white/15 hover:border-white/30 hover:bg-white/10 rounded-full px-3 py-2 text-slate-300 hover:text-white text-xs font-semibold cursor-pointer backdrop-blur-md transition-all duration-200 select-none shadow-md"
+            onClick={() => setMode('landing')}
+          >
+            🏠 <span className="hidden sm:inline">Home</span>
+          </button>
+
+          {/* Visit Shop button */}
+          <button
+            className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 hover:border-amber-400/40 hover:bg-amber-500/15 rounded-full px-3 py-2 text-amber-400 text-xs font-semibold cursor-pointer backdrop-blur-md transition-all duration-200 select-none shadow-md"
+            onClick={() => setMode('shop')}
+          >
+            🛍️ <span className="hidden sm:inline">Visit Shop</span>
+          </button>
+
+          {/* Cart button */}
+          <button
+            className="flex items-center gap-2.5 bg-[#0f1f35]/50 border border-emerald-500/20 hover:bg-emerald-500/15 hover:border-emerald-400 rounded-full px-4 py-2 text-slate-100 text-sm font-sans cursor-pointer backdrop-blur-md transition-all duration-200 relative select-none shadow-md"
+            onClick={() => setCartOpen(!cartOpen)}
+          >
+            <span className="text-lg">🛒</span>
+            {count > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-emerald-500 text-white rounded-full w-5 h-5 text-[10px] font-black flex items-center justify-center shadow-md animate-pulse">
+                {count}
+              </span>
+            )}
+            <span className="font-bold tracking-wide">
+              {count > 0 ? `${weight.toFixed(1)} kg` : 'Cart'}
             </span>
-          )}
-          <span className="font-bold tracking-wide">
-            {count > 0 ? `${weight.toFixed(1)} kg` : 'Cart'}
-          </span>
-        </button>
+          </button>
+        </div>
       </div>
 
       {/* Controls legend */}

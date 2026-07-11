@@ -2,7 +2,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Suspense } from 'react';
 import CheckoutFlow from './components/checkout/CheckoutFlow';
 import HUD from './components/hud/HUD';
+import LandingPage from './components/landing/LandingPage';
 import OrchadCanvas from './components/scene/OrchadCanvas';
+import FruitShop from './components/shop/FruitShop';
 import { useOrchardStore } from './store/useOrchardStore';
 
 function LoadingScreen() {
@@ -38,7 +40,20 @@ export default function App() {
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-[#0a1628] font-sans">
       <AnimatePresence mode="wait">
-        {mode === 'explore' ? (
+        {mode === 'landing' && (
+          <motion.div
+            key="landing"
+            className="w-full h-full"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <LandingPage />
+          </motion.div>
+        )}
+
+        {mode === 'explore' && (
           <motion.div
             key="explore"
             className="relative w-full h-full"
@@ -57,7 +72,22 @@ export default function App() {
               <HUD />
             </div>
           </motion.div>
-        ) : (
+        )}
+
+        {mode === 'shop' && (
+          <motion.div
+            key="shop"
+            className="w-full h-full"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <FruitShop />
+          </motion.div>
+        )}
+
+        {mode === 'checkout' && (
           <motion.div
             key="checkout"
             className="w-full h-full overflow-y-auto"

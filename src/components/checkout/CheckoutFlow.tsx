@@ -342,7 +342,7 @@ function SuccessScreen() {
   const handleBack = () => {
     clearCart();
     setCheckoutStep("cart");
-    setMode("explore");
+    setMode("landing");
   };
 
   return (
@@ -368,7 +368,7 @@ function SuccessScreen() {
         className="w-full max-w-[340px] bg-linear-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 text-white font-bold rounded-2xl p-4 shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/35 transition-all duration-200 cursor-pointer active:scale-[0.98]"
         onClick={handleBack}
       >
-        🌿 Explore Orchard Again
+        🌿 Back to Home
       </button>
     </div>
   );
@@ -386,9 +386,9 @@ export default function CheckoutFlow() {
       <div className="flex justify-between items-center px-8 py-4 border-b border-white/10 bg-[#0a1628]/70 backdrop-blur-md sticky top-0 z-10">
         <button
           className="bg-transparent border border-white/15 hover:border-white/30 rounded-xl px-4 py-2 text-slate-400 hover:text-white text-xs font-semibold cursor-pointer transition-all duration-200"
-          onClick={() => setMode("explore")}
+          onClick={() => setMode("landing")}
         >
-          ← Back to Orchard
+          ← Back to Home
         </button>
         <div className="text-base font-bold text-emerald-400 flex items-center gap-2 select-none">
           <span>🌿</span> KhagraChori Agro

@@ -10,7 +10,7 @@ export interface CartItem {
   weightKg: number;
 }
 
-export type AppMode = "explore" | "checkout";
+export type AppMode = "landing" | "explore" | "checkout" | "shop";
 export type CheckoutStep = "cart" | "shipping" | "payment" | "success";
 
 interface OrderDetails {
@@ -57,7 +57,7 @@ interface OrchardStore {
 }
 
 export const useOrchardStore = create<OrchardStore>((set, get) => ({
-  mode: "explore",
+  mode: "landing",
   setMode: (m) => set({ mode: m }),
 
   checkoutStep: "cart",
