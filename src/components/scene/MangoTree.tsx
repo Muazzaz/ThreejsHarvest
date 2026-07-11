@@ -48,7 +48,7 @@ function MangoLeafCluster({ position, size = 1.0 }: { position: Vec3; size?: num
   return (
     <group position={position}>
       {leaves.map((leaf, i) => (
-        <mesh key={i} position={leaf.pos} rotation={leaf.rot} scale={leaf.scale} castShadow>
+        <mesh key={i} position={leaf.pos} rotation={leaf.rot} scale={leaf.scale}>
           <planeGeometry args={[0.4, 0.8]} />
           <meshStandardMaterial
             map={leafTex}

@@ -1,4 +1,4 @@
-import { Environment, Sky } from '@react-three/drei';
+import { Sky } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 import { Suspense } from 'react';
@@ -19,12 +19,12 @@ function SceneContent() {
         position={[80, 120, 60]}
         intensity={1.8}
         castShadow
-        shadow-mapSize={[2048, 2048]}
-        shadow-camera-far={300}
-        shadow-camera-left={-120}
-        shadow-camera-right={120}
-        shadow-camera-top={120}
-        shadow-camera-bottom={-120}
+        shadow-mapSize={[1024, 1024]}
+        shadow-camera-far={200}
+        shadow-camera-left={-80}
+        shadow-camera-right={80}
+        shadow-camera-top={80}
+        shadow-camera-bottom={-80}
         color="#fff8e7"
       />
       <hemisphereLight args={['#87ceeb', '#4a7c59', 0.4]} />
@@ -45,9 +45,6 @@ function SceneContent() {
       <Orchard />
       <ModernElements />
       <Vehicle />
-
-      {/* Ambient environment */}
-      <Environment preset="park" />
     </Physics>
   );
 }
@@ -56,8 +53,9 @@ export default function OrchadCanvas() {
   return (
     <Canvas
       shadows
-      camera={{ position: [0, 12, 20], fov: 60, near: 0.1, far: 500 }}
-      gl={{ antialias: true, toneMapping: 5 /* ACESFilmic */ }}
+      dpr={[1, 1.5]}
+      camera={{ position: [0, 12, 20], fov: 60, near: 0.5, far: 350 }}
+      gl={{ antialias: false, toneMapping: 5 /* ACESFilmic */, powerPreference: 'high-performance' }}
       style={{ width: '100vw', height: '100vh', background: '#87ceeb' }}
     >
       <Suspense fallback={null}>
