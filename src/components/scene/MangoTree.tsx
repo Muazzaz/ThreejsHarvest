@@ -86,7 +86,6 @@ function BranchRenderer({ branches, barkColor = '#4a3828' }: {
             key={i}
             position={t.position}
             quaternion={t.quaternion}
-            castShadow
           >
             <cylinderGeometry args={[b.radiusEnd, b.radiusStart, t.length, 6]} />
             <meshStandardMaterial
@@ -188,7 +187,7 @@ function MangoFruits({ fruitPositions, seed = 0 }: {
         return (
           <group key={i} position={fruit.pos} rotation={fruit.rot}>
             {/* Mango body */}
-            <mesh castShadow scale={fruit.scale}>
+            <mesh scale={fruit.scale}>
               <sphereGeometry args={[1, 12, 10]} />
               <meshStandardMaterial
                 color={color}
@@ -248,7 +247,7 @@ function TrunkRoots({ seed = 0 }: { seed?: number }) {
   return (
     <group>
       {rootTransforms.map((rt, i) => (
-        <mesh key={i} position={rt.position} quaternion={rt.quaternion} castShadow>
+        <mesh key={i} position={rt.position} quaternion={rt.quaternion}>
           <cylinderGeometry args={[rt.thickness * 0.3, rt.thickness, rt.length, 5]} />
           <meshStandardMaterial map={barkTex} color="#3a2e20" roughness={0.98} />
         </mesh>
@@ -330,7 +329,7 @@ export default function MangoTree({ x, z, groundY = 0, scale: treeScale = 1 }: M
       </mesh>
 
       {/* ── Trunk flare at base ── */}
-      <mesh castShadow position={[0, 0.15, 0]}>
+      <mesh position={[0, 0.15, 0]}>
         <cylinderGeometry args={[trunkRadiusBottom, trunkRadiusBottom * 1.4, 0.3, 10]} />
         <meshStandardMaterial map={barkTex} color="#3a2a1a" roughness={0.98} />
       </mesh>

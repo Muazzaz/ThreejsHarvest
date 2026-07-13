@@ -12,7 +12,7 @@ function SceneContent() {
   useVehicleControls(); // register key listeners
 
   return (
-    <Physics gravity={[0, -20, 0]} timeStep="vary">
+    <Physics gravity={[0, -20, 0]} timeStep={1 / 60}>
       {/* Lighting */}
       <ambientLight intensity={0.6} />
       <directionalLight

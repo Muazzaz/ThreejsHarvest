@@ -49,7 +49,7 @@ function JujubeLeafCluster({ position, size = 1.0 }: { position: Vec3; size?: nu
   return (
     <group position={position}>
       {leaves.map((leaf, i) => (
-        <mesh key={i} position={leaf.pos} rotation={leaf.rot} scale={leaf.scale} castShadow>
+        <mesh key={i} position={leaf.pos} rotation={leaf.rot} scale={leaf.scale}>
           <planeGeometry args={[0.35, 0.5]} />
           <meshStandardMaterial
             map={leafTex}
@@ -80,7 +80,7 @@ function BranchRenderer({ branches }: { branches: BranchSegment[] }) {
       {branches.map((b, i) => {
         const t = transforms[i];
         return (
-          <mesh key={i} position={t.position} quaternion={t.quaternion} castShadow>
+          <mesh key={i} position={t.position} quaternion={t.quaternion}>
             <cylinderGeometry args={[b.radiusEnd, b.radiusStart, t.length, 6]} />
             <meshStandardMaterial
               map={barkTex}
@@ -170,7 +170,7 @@ function JujubeFruits({ fruitPositions, seed = 0 }: {
 
         return (
           <group key={i} position={fruit.pos}>
-            <mesh castShadow scale={fruit.scale}>
+            <mesh scale={fruit.scale}>
               <sphereGeometry args={[1, 8, 6]} />
               <meshStandardMaterial color={color} roughness={0.35} metalness={0.02} />
             </mesh>
@@ -213,7 +213,7 @@ function JujubeRoots({ seed = 0 }: { seed?: number }) {
   return (
     <group>
       {rootTransforms.map((rt, i) => (
-        <mesh key={i} position={rt.position} quaternion={rt.quaternion} castShadow>
+        <mesh key={i} position={rt.position} quaternion={rt.quaternion}>
           <cylinderGeometry args={[rt.thickness * 0.3, rt.thickness, rt.length, 5]} />
           <meshStandardMaterial map={barkTex} color="#3a2e18" roughness={0.98} />
         </mesh>
@@ -294,7 +294,7 @@ export default function JujubeTree({ x, z, groundY = 0 }: JujubeTreeProps) {
       </mesh>
 
       {/* ── Trunk flare ── */}
-      <mesh castShadow position={[0, 0.1, 0]}>
+      <mesh position={[0, 0.1, 0]}>
         <cylinderGeometry args={[trunkRadiusBottom, trunkRadiusBottom * 1.25, 0.2, 8]} />
         <meshStandardMaterial map={barkTex} color="#3a2a15" roughness={0.98} />
       </mesh>

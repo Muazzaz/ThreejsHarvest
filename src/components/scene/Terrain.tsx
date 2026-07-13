@@ -37,16 +37,6 @@ export default function Terrain() {
         </mesh>
       </RigidBody>
 
-      {/* ── Subtle wireframe grid overlay following the curves of the hills ── */}
-      <mesh geometry={hillsGeometry} position={[0, 0.015, 0]}>
-        <meshBasicMaterial
-          color="#2d6935"
-          wireframe
-          transparent
-          opacity={0.18}
-        />
-      </mesh>
-
       {/* ── Boundary wall slabs (solid, invisible physics boundaries) ── */}
       {/* North */}
       <RigidBody type="fixed">

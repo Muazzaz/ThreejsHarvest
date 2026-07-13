@@ -95,7 +95,6 @@ function PapayaLeaf({ index, total, trunkHeight, trunkRadius, seed }: {
               ]}
               rotation={[lobeTilt, lobeDir + Math.PI / 2, lobeRng() * 0.15]}
               scale={leafScale * (0.75 + lobeRng() * 0.3)}
-              castShadow
             >
               <planeGeometry args={[0.4, 0.85]} />
               <meshStandardMaterial
@@ -198,7 +197,7 @@ function PapayaFruits({ trunkHeight, trunkRadius, seed = 0 }: {
 
         return (
           <group key={i} position={fruit.pos} rotation={fruit.rot}>
-            <mesh castShadow scale={[fruit.scaleX, fruit.scaleY, fruit.scaleX]}>
+            <mesh scale={[fruit.scaleX, fruit.scaleY, fruit.scaleX]}>
               <sphereGeometry args={[1, 10, 8]} />
               <meshStandardMaterial color={color} roughness={0.4} metalness={0.01} />
             </mesh>

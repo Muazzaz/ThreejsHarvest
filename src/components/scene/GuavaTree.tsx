@@ -47,7 +47,7 @@ function GuavaLeafCluster({ position, size = 1.0 }: { position: Vec3; size?: num
   return (
     <group position={position}>
       {leaves.map((leaf, i) => (
-        <mesh key={i} position={leaf.pos} rotation={leaf.rot} scale={leaf.scale} castShadow>
+        <mesh key={i} position={leaf.pos} rotation={leaf.rot} scale={leaf.scale}>
           <planeGeometry args={[0.5, 0.7]} />
           <meshStandardMaterial
             map={leafTex}
@@ -86,7 +86,6 @@ function BranchRenderer({ branches, barkColor = '#5a5045' }: {
             key={i}
             position={t.position}
             quaternion={t.quaternion}
-            castShadow
           >
             <cylinderGeometry args={[b.radiusEnd, b.radiusStart, t.length, 6]} />
             <meshStandardMaterial
@@ -138,7 +137,7 @@ function GuavaFruits({ fruitPositions, seed = 0 }: {
 
         return (
           <group key={i} position={fruit.pos}>
-            <mesh castShadow scale={[fruit.scale, fruit.scale * 1.05, fruit.scale]}>
+            <mesh scale={[fruit.scale, fruit.scale * 1.05, fruit.scale]}>
               <sphereGeometry args={[1, 10, 8]} />
               <meshStandardMaterial color={color} roughness={0.5} metalness={0.01} />
             </mesh>
@@ -196,7 +195,6 @@ function GuavaRoots({ seed = 0 }: { seed?: number }) {
           key={i}
           position={rt.position}
           quaternion={rt.quaternion}
-          castShadow
         >
           <cylinderGeometry args={[rt.root.thickness * 0.3, rt.root.thickness, rt.length, 5]} />
           <meshStandardMaterial map={barkTex} color="#4a4035" roughness={0.98} />
@@ -290,7 +288,7 @@ export default function GuavaTree({ x, z, groundY = 0, isSpecial = false }: Guav
       </mesh>
 
       {/* ── Trunk flare ── */}
-      <mesh castShadow position={[0, 0.12, 0]}>
+      <mesh position={[0, 0.12, 0]}>
         <cylinderGeometry args={[trunkRadiusBottom, trunkRadiusBottom * 1.3, 0.25, 8]} />
         <meshStandardMaterial map={barkTex} color="#4a3a2a" roughness={0.95} />
       </mesh>

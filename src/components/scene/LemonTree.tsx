@@ -49,7 +49,7 @@ function LemonLeafCluster({ position, size = 1.0 }: { position: Vec3; size?: num
   return (
     <group position={position}>
       {leaves.map((leaf, i) => (
-        <mesh key={i} position={leaf.pos} rotation={leaf.rot} scale={leaf.scale} castShadow>
+        <mesh key={i} position={leaf.pos} rotation={leaf.rot} scale={leaf.scale}>
           <planeGeometry args={[0.3, 0.6]} />
           <meshStandardMaterial
             map={leafTex}
@@ -80,7 +80,7 @@ function BranchRenderer({ branches }: { branches: BranchSegment[] }) {
       {branches.map((b, i) => {
         const t = transforms[i];
         return (
-          <mesh key={i} position={t.position} quaternion={t.quaternion} castShadow>
+          <mesh key={i} position={t.position} quaternion={t.quaternion}>
             <cylinderGeometry args={[b.radiusEnd, b.radiusStart, t.length, 6]} />
             <meshStandardMaterial
               map={barkTex}
@@ -183,7 +183,7 @@ function LemonFruits({ fruitPositions, seed = 0 }: {
         return (
           <group key={i} position={fruit.pos} rotation={fruit.rot}>
             {/* Lemon body */}
-            <mesh castShadow scale={[fruit.scaleX, fruit.scaleY, fruit.scaleX]}>
+            <mesh scale={[fruit.scaleX, fruit.scaleY, fruit.scaleX]}>
               <sphereGeometry args={[1, 10, 8]} />
               <meshStandardMaterial color={color} roughness={0.4} metalness={0.02} />
             </mesh>
@@ -230,7 +230,7 @@ function LemonRoots({ seed = 0 }: { seed?: number }) {
   return (
     <group>
       {rootTransforms.map((rt, i) => (
-        <mesh key={i} position={rt.position} quaternion={rt.quaternion} castShadow>
+        <mesh key={i} position={rt.position} quaternion={rt.quaternion}>
           <cylinderGeometry args={[rt.thickness * 0.3, rt.thickness, rt.length, 5]} />
           <meshStandardMaterial map={barkTex} color="#4a3a1a" roughness={0.98} />
         </mesh>
@@ -311,7 +311,7 @@ export default function LemonTree({ x, z, groundY = 0 }: LemonTreeProps) {
       </mesh>
 
       {/* ── Trunk flare ── */}
-      <mesh castShadow position={[0, 0.1, 0]}>
+      <mesh position={[0, 0.1, 0]}>
         <cylinderGeometry args={[trunkRadiusBottom, trunkRadiusBottom * 1.25, 0.2, 8]} />
         <meshStandardMaterial map={barkTex} color="#4a3a1a" roughness={0.95} />
       </mesh>
