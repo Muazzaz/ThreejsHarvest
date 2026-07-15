@@ -31,6 +31,8 @@ const _basisMat = new THREE.Matrix4();
 export default function Vehicle() {
   const chassisRef = useRef<RapierRigidBody>(null);
   const meshRef = useRef<THREE.Group>(null);
+  const wheelRefs = useRef<(THREE.Group | null)[]>([null, null, null, null]);
+  const wheelAngle = useRef(0);
   const { setNearbyFruit, addToCart, setHarvestCooldown } = useOrchardStore();
 
   useFrame(({ camera }, delta) => {
@@ -145,6 +147,13 @@ export default function Vehicle() {
       meshRef.current.quaternion.setFromRotationMatrix(_basisMat);
     }
 
+    // ── WHEEL SPIN — rotate wheels based on forward speed ────────────────
+    const WHEEL_RADIUS = 0.38; // torus outer radius (0.26 + 0.12)
+    wheelAngle.current += (currentFwdSpeed / WHEEL_RADIUS) * delta;
+    for (const wRef of wheelRefs.current) {
+      if (wRef) wRef.rotation.x = wheelAngle.current;
+    }
+
     // ── 8. SMOOTH CAMERA FOLLOW SNAPPED TO HILL HEIGHT ──────────────────────
     _camTarget.set(pos.x, visualY + 1.2, pos.z);
     _camPos.set(
@@ -247,9 +256,13 @@ export default function Vehicle() {
         ))}
 
         {/* ── WHEELS — thick torus tires + alloy rims ───────────────────── */}
-        {([-0.88, 0.88] as number[]).map((sx) =>
-          ([1.0, -1.0] as number[]).map((sz) => (
-            <group key={`w-${sx}-${sz}`} position={[sx, -0.2, sz]}>
+        {([-0.88, 0.88] as number[]).map((sx, si) =>
+          ([1.0, -1.0] as number[]).map((sz, zi) => (
+            <group
+              key={`w-${sx}-${sz}`}
+              ref={(el) => { wheelRefs.current[si * 2 + zi] = el; }}
+              position={[sx, -0.2, sz]}
+            >
               {/* Tire */}
               <mesh rotation={[0, 0, Math.PI / 2]}>
                 <torusGeometry args={[0.26, 0.12, 8, 16]} />
