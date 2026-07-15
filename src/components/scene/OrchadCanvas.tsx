@@ -3,7 +3,6 @@ import { Canvas } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 import { Suspense } from 'react';
 import { useVehicleControls } from '../../hooks/useVehicleControls';
-import ModernElements from './ModernElements';
 import Orchard from './Orchard';
 import Terrain from './Terrain';
 import Vehicle from './Vehicle';
@@ -43,7 +42,6 @@ function SceneContent() {
       {/* Scene objects */}
       <Terrain />
       <Orchard />
-      <ModernElements />
       <Vehicle />
     </Physics>
   );
