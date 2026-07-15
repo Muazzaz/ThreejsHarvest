@@ -196,48 +196,173 @@ export default function Vehicle() {
 
       {/* ── Visual mesh (synced in useFrame) ────────────────────────────── */}
       <group ref={meshRef}>
-        {/* Body */}
-        <mesh castShadow>
-          <boxGeometry args={[1.8, 0.7, 3.1]} />
-          <meshStandardMaterial color="#e2e8f0" metalness={0.4} roughness={0.5} />
+        {/* ── LOWER BODY — smooth rounded base ──────────────────────────── */}
+        {/* Main body — rounded capsule-like shape */}
+        <mesh castShadow position={[0, 0.05, 0]}>
+          <boxGeometry args={[1.75, 0.55, 3.2]} />
+          <meshStandardMaterial color="#1e293b" metalness={0.7} roughness={0.25} />
         </mesh>
-        {/* Cabin */}
-        <mesh castShadow position={[0, 0.6, -0.15]}>
-          <boxGeometry args={[1.35, 0.5, 1.55]} />
-          <meshStandardMaterial color="#cbd5e1" metalness={0.3} roughness={0.6} />
+        {/* Body side curves (left + right) — gives the slab rounded edges */}
+        {([-0.88, 0.88] as number[]).map((sx) => (
+          <mesh key={`side-${sx}`} castShadow position={[sx, 0.05, 0]} rotation={[0, 0, 0]}>
+            <cylinderGeometry args={[0.28, 0.28, 3.1, 8, 1, false, 0, Math.PI]} />
+            <meshStandardMaterial color="#1e293b" metalness={0.7} roughness={0.25} />
+          </mesh>
+        ))}
+        {/* Front bumper — rounded nose */}
+        <mesh position={[0, -0.02, 1.55]}>
+          <sphereGeometry args={[0.35, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
+          <meshStandardMaterial color="#1e293b" metalness={0.7} roughness={0.25} />
         </mesh>
-        {/* Windshield */}
-        <mesh position={[0, 0.63, 0.56]}>
-          <boxGeometry args={[1.25, 0.36, 0.05]} />
-          <meshStandardMaterial color="#7dd3fc" transparent opacity={0.55} />
+        <mesh position={[0, 0.0, 1.55]}>
+          <boxGeometry args={[1.65, 0.45, 0.2]} />
+          <meshStandardMaterial color="#1e293b" metalness={0.7} roughness={0.25} />
         </mesh>
-        {/* Neon LED front */}
-        <mesh position={[0, 0.02, 1.58]}>
-          <boxGeometry args={[1.7, 0.07, 0.04]} />
-          <meshStandardMaterial color="#4ade80" emissive="#4ade80" emissiveIntensity={4} />
+        {/* Rear bumper */}
+        <mesh position={[0, 0.0, -1.55]}>
+          <boxGeometry args={[1.65, 0.45, 0.2]} />
+          <meshStandardMaterial color="#1e293b" metalness={0.7} roughness={0.25} />
         </mesh>
-        {/* Neon LED back */}
-        <mesh position={[0, 0.02, -1.58]}>
-          <boxGeometry args={[1.7, 0.07, 0.04]} />
-          <meshStandardMaterial color="#4ade80" emissive="#4ade80" emissiveIntensity={4} />
+
+        {/* ── UPPER BODY — hood + cabin ─────────────────────────────────── */}
+        {/* Hood — sleek low-profile front */}
+        <mesh castShadow position={[0, 0.38, 0.95]}>
+          <boxGeometry args={[1.6, 0.12, 1.2]} />
+          <meshStandardMaterial color="#1e293b" metalness={0.75} roughness={0.2} />
         </mesh>
-        {/* Wheels — 4 corners */}
-        {([-0.95, 0.95] as number[]).map((sx) =>
-          ([1.15, -1.15] as number[]).map((sz) => (
-            <mesh
-              key={`${sx}-${sz}`}
-              position={[sx, -0.27, sz]}
-              rotation={[0, 0, Math.PI / 2]}
-              castShadow
-            >
-              <cylinderGeometry args={[0.36, 0.36, 0.26, 12]} />
-              <meshStandardMaterial color="#1e293b" roughness={0.9} />
+        {/* Hood slope — tapers toward front */}
+        <mesh castShadow position={[0, 0.34, 1.42]} rotation={[0.15, 0, 0]}>
+          <boxGeometry args={[1.55, 0.08, 0.4]} />
+          <meshStandardMaterial color="#1e293b" metalness={0.75} roughness={0.2} />
+        </mesh>
+
+        {/* Cabin — rounded top using scaled sphere */}
+        <mesh castShadow position={[0, 0.58, -0.2]}>
+          <boxGeometry args={[1.45, 0.48, 1.5]} />
+          <meshStandardMaterial color="#1e293b" metalness={0.65} roughness={0.25} />
+        </mesh>
+        {/* Cabin roof — rounded top edge */}
+        <mesh position={[0, 0.85, -0.2]}>
+          <boxGeometry args={[1.3, 0.06, 1.4]} />
+          <meshStandardMaterial color="#1e293b" metalness={0.65} roughness={0.25} />
+        </mesh>
+
+        {/* ── GLASS — windshields ───────────────────────────────────────── */}
+        {/* Front windshield — raked angle */}
+        <mesh position={[0, 0.6, 0.55]} rotation={[-0.35, 0, 0]}>
+          <boxGeometry args={[1.3, 0.5, 0.04]} />
+          <meshStandardMaterial color="#64b5f6" transparent opacity={0.45} metalness={0.9} roughness={0.1} />
+        </mesh>
+        {/* Rear windshield — less raked */}
+        <mesh position={[0, 0.6, -0.95]} rotation={[0.25, 0, 0]}>
+          <boxGeometry args={[1.25, 0.45, 0.04]} />
+          <meshStandardMaterial color="#64b5f6" transparent opacity={0.4} metalness={0.9} roughness={0.1} />
+        </mesh>
+        {/* Side windows (left + right) */}
+        {([-0.735, 0.735] as number[]).map((sx) => (
+          <mesh key={`win-${sx}`} position={[sx, 0.62, -0.2]}>
+            <boxGeometry args={[0.04, 0.36, 1.2]} />
+            <meshStandardMaterial color="#64b5f6" transparent opacity={0.35} metalness={0.9} roughness={0.1} />
+          </mesh>
+        ))}
+
+        {/* ── FENDERS / WHEEL ARCHES ────────────────────────────────────── */}
+        {([-0.85, 0.85] as number[]).map((sx) =>
+          ([1.1, -1.1] as number[]).map((sz) => (
+            <mesh key={`arch-${sx}-${sz}`} position={[sx, -0.1, sz]} rotation={[0, 0, Math.PI / 2]}>
+              <torusGeometry args={[0.38, 0.08, 6, 12, Math.PI]} />
+              <meshStandardMaterial color="#0f172a" roughness={0.8} metalness={0.3} />
             </mesh>
           ))
         )}
-        {/* Headlights */}
-        <pointLight position={[0.5, 0.15, 1.7]} color="#fef9c3" intensity={10} distance={14} />
-        <pointLight position={[-0.5, 0.15, 1.7]} color="#fef9c3" intensity={10} distance={14} />
+        {/* Side skirts */}
+        {([-0.9, 0.9] as number[]).map((sx) => (
+          <mesh key={`skirt-${sx}`} position={[sx, -0.18, 0]}>
+            <boxGeometry args={[0.06, 0.18, 2.6]} />
+            <meshStandardMaterial color="#0f172a" roughness={0.7} metalness={0.4} />
+          </mesh>
+        ))}
+
+        {/* ── LIGHTS ────────────────────────────────────────────────────── */}
+        {/* Headlights — slim LED strips */}
+        {([-0.6, 0.6] as number[]).map((sx) => (
+          <mesh key={`hl-${sx}`} position={[sx, 0.2, 1.62]}>
+            <boxGeometry args={[0.35, 0.08, 0.04]} />
+            <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={3} />
+          </mesh>
+        ))}
+        {/* DRL light bar — thin strip connecting headlights */}
+        <mesh position={[0, 0.14, 1.62]}>
+          <boxGeometry args={[1.55, 0.03, 0.03]} />
+          <meshStandardMaterial color="#4ade80" emissive="#4ade80" emissiveIntensity={3} />
+        </mesh>
+        {/* Taillights — wide LED bars */}
+        {([-0.55, 0.55] as number[]).map((sx) => (
+          <mesh key={`tl-${sx}`} position={[sx, 0.2, -1.62]}>
+            <boxGeometry args={[0.4, 0.08, 0.04]} />
+            <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={2.5} />
+          </mesh>
+        ))}
+        {/* Taillight connecting bar */}
+        <mesh position={[0, 0.2, -1.63]}>
+          <boxGeometry args={[1.5, 0.025, 0.03]} />
+          <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={1.5} />
+        </mesh>
+
+        {/* ── GRILLE — front face detail ────────────────────────────────── */}
+        <mesh position={[0, 0.08, 1.63]}>
+          <boxGeometry args={[1.0, 0.18, 0.03]} />
+          <meshStandardMaterial color="#0f172a" roughness={0.6} metalness={0.5} />
+        </mesh>
+
+        {/* ── ROOF RAILS ───────────────────────────────────────────────── */}
+        {([-0.6, 0.6] as number[]).map((sx) => (
+          <mesh key={`rail-${sx}`} position={[sx, 0.9, -0.2]}>
+            <cylinderGeometry args={[0.02, 0.02, 1.3, 6]} />
+            <meshStandardMaterial color="#94a3b8" metalness={0.8} roughness={0.2} />
+          </mesh>
+        ))}
+
+        {/* ── SIDE MIRRORS ─────────────────────────────────────────────── */}
+        {([-0.85, 0.85] as number[]).map((sx) => (
+          <group key={`mirror-${sx}`} position={[sx * 1.1, 0.55, 0.4]}>
+            <mesh>
+              <boxGeometry args={[0.1, 0.08, 0.14]} />
+              <meshStandardMaterial color="#1e293b" metalness={0.7} roughness={0.25} />
+            </mesh>
+            <mesh position={[sx > 0 ? 0.04 : -0.04, 0, 0]}>
+              <boxGeometry args={[0.02, 0.06, 0.1]} />
+              <meshStandardMaterial color="#64b5f6" metalness={0.9} roughness={0.1} />
+            </mesh>
+          </group>
+        ))}
+
+        {/* ── WHEELS — 4 corners with rims ──────────────────────────────── */}
+        {([-0.92, 0.92] as number[]).map((sx) =>
+          ([1.1, -1.1] as number[]).map((sz) => (
+            <group key={`wheel-${sx}-${sz}`} position={[sx, -0.25, sz]}>
+              {/* Tire */}
+              <mesh rotation={[0, 0, Math.PI / 2]}>
+                <torusGeometry args={[0.28, 0.1, 8, 16]} />
+                <meshStandardMaterial color="#1a1a2e" roughness={0.95} metalness={0.05} />
+              </mesh>
+              {/* Rim — shiny alloy */}
+              <mesh rotation={[0, 0, Math.PI / 2]}>
+                <cylinderGeometry args={[0.22, 0.22, 0.12, 10]} />
+                <meshStandardMaterial color="#94a3b8" metalness={0.9} roughness={0.15} />
+              </mesh>
+              {/* Rim center cap */}
+              <mesh rotation={[0, 0, Math.PI / 2]} position={[sx > 0 ? 0.07 : -0.07, 0, 0]}>
+                <cylinderGeometry args={[0.08, 0.08, 0.02, 8]} />
+                <meshStandardMaterial color="#64748b" metalness={0.85} roughness={0.2} />
+              </mesh>
+            </group>
+          ))
+        )}
+
+        {/* ── HEADLIGHT ILLUMINATION ────────────────────────────────────── */}
+        <pointLight position={[0.5, 0.2, 1.8]} color="#fef9c3" intensity={10} distance={14} />
+        <pointLight position={[-0.5, 0.2, 1.8]} color="#fef9c3" intensity={10} distance={14} />
       </group>
     </>
   );
