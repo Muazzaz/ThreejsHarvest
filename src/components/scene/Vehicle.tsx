@@ -255,24 +255,23 @@ export default function Vehicle() {
           </mesh>
         ))}
 
-        {/* ── WHEELS — thick torus tires + alloy rims ───────────────────── */}
+        {/* ── WHEELS ─────────────────────────────────────────────── */}
         {([-0.88, 0.88] as number[]).map((sx, si) =>
           ([1.0, -1.0] as number[]).map((sz, zi) => (
-            <group
-              key={`w-${sx}-${sz}`}
-              ref={(el) => { wheelRefs.current[si * 2 + zi] = el; }}
-              position={[sx, -0.2, sz]}
-            >
-              {/* Tire */}
-              <mesh rotation={[0, 0, Math.PI / 2]}>
-                <torusGeometry args={[0.26, 0.12, 8, 16]} />
-                <meshStandardMaterial color="#111827" roughness={0.92} />
-              </mesh>
-              {/* Rim */}
-              <mesh rotation={[0, 0, Math.PI / 2]}>
-                <cylinderGeometry args={[0.2, 0.2, 0.16, 12]} />
-                <meshStandardMaterial color="#9ca3af" metalness={0.85} roughness={0.15} />
-              </mesh>
+            <group key={`w-${sx}-${sz}`} position={[sx, -0.2, sz]}>
+              {/* Spin group — rotates around X axis (the axle) */}
+              <group ref={(el) => { wheelRefs.current[si * 2 + zi] = el; }}>
+                {/* Tire — torus stands upright, axle along X */}
+                <mesh rotation={[0, Math.PI / 2, 0]}>
+                  <torusGeometry args={[0.26, 0.12, 8, 16]} />
+                  <meshStandardMaterial color="#111827" roughness={0.92} />
+                </mesh>
+                {/* Rim — cylinder axle along X */}
+                <mesh rotation={[0, 0, Math.PI / 2]}>
+                  <cylinderGeometry args={[0.2, 0.2, 0.16, 12]} />
+                  <meshStandardMaterial color="#9ca3af" metalness={0.85} roughness={0.15} />
+                </mesh>
+              </group>
             </group>
           ))
         )}
