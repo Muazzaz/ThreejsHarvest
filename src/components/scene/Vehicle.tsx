@@ -170,7 +170,7 @@ export default function Vehicle() {
     }
 
     // Snap visual chassis to ground height under the car so it follows terrain curves perfectly
-    const visualY = getTerrainHeight(pos.x, pos.z) + 0.38; // 0.38 offset for wheels/chassis alignment
+    const visualY = getTerrainHeight(pos.x, pos.z) + 0.58; // offset so tire bottoms touch ground
 
     // ── 7. SYNC VISUAL MESH WITH SLOPE ──────────────────────────────────────
     if (meshRef.current) {
