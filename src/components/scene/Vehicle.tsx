@@ -149,7 +149,7 @@ export default function Vehicle() {
 
     // ── WHEEL SPIN — rotate wheels based on forward speed ────────────────
     const WHEEL_RADIUS = 0.38; // torus outer radius (0.26 + 0.12)
-    wheelAngle.current += (currentFwdSpeed / WHEEL_RADIUS) * delta;
+    wheelAngle.current -= (currentFwdSpeed / WHEEL_RADIUS) * delta;
     for (const wRef of wheelRefs.current) {
       if (wRef) wRef.rotation.x = wheelAngle.current;
     }
