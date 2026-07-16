@@ -375,9 +375,20 @@ export default function Vehicle() {
           <meshStandardMaterial color="#111827" roughness={0.5} metalness={0.4} />
         </mesh>
 
-        {/* ── HEADLIGHT ILLUMINATION ────────────────────────────────────── */}
-        <pointLight position={[0.5, 0.2, 1.7]} color="#fef9c3" intensity={8} distance={14} />
-        <pointLight position={[-0.5, 0.2, 1.7]} color="#fef9c3" intensity={8} distance={14} />
+        {/* ── HEADLIGHT ILLUMINATION — realistic forward spot beams ────── */}
+        {([-0.5, 0.5] as number[]).map((sx) => (
+          <spotLight
+            key={`spot-${sx}`}
+            position={[sx, 0.2, 1.7]}
+            target-position={[sx * 0.3, -0.5, 12]}
+            color="#fef9c3"
+            intensity={15}
+            distance={25}
+            angle={0.5}
+            penumbra={0.4}
+            decay={1.5}
+          />
+        ))}
        </group>
       </group>
     </>
