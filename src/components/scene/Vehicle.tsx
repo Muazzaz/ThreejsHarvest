@@ -1,7 +1,7 @@
 import { useFrame } from '@react-three/fiber';
 import type { RapierRigidBody } from '@react-three/rapier';
 import { CuboidCollider, RigidBody } from '@react-three/rapier';
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import * as THREE from 'three';
 import { getKeys } from '../../hooks/useVehicleControls';
 import type { FruitType } from '../../lib/products';
@@ -33,7 +33,44 @@ export default function Vehicle() {
   const meshRef = useRef<THREE.Group>(null);
   const wheelRefs = useRef<(THREE.Group | null)[]>([null, null, null, null]);
   const wheelAngle = useRef(0);
+  const orbitAngle = useRef(0);
+  const orbitPitch = useRef(0);
+  const isOrbiting = useRef(false);
   const { setNearbyFruit, addToCart, setHarvestCooldown } = useOrchardStore();
+
+  // ── Ctrl+Mouse orbit controls ─────────────────────────────────────────────
+  useEffect(() => {
+    const onMouseDown = (e: MouseEvent) => {
+      if (e.ctrlKey || e.metaKey) isOrbiting.current = true;
+    };
+    const onMouseUp = () => { isOrbiting.current = false; };
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isOrbiting.current) return;
+      orbitAngle.current += e.movementX * 0.005;
+      orbitPitch.current = Math.max(-0.3, Math.min(0.5, orbitPitch.current - e.movementY * 0.004));
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Control') document.body.style.cursor = 'grab';
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Control') {
+        isOrbiting.current = false;
+        document.body.style.cursor = '';
+      }
+    };
+    window.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mouseup', onMouseUp);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mouseup', onMouseUp);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
+  }, []);
 
   useFrame(({ camera }, delta) => {
     const body = chassisRef.current;
@@ -154,12 +191,24 @@ export default function Vehicle() {
       if (wRef) wRef.rotation.x = wheelAngle.current;
     }
 
-    // ── 8. SMOOTH CAMERA FOLLOW SNAPPED TO HILL HEIGHT ──────────────────────
+    // ── 8. SMOOTH CAMERA FOLLOW WITH ORBIT ───────────────────────────────
+    // Smoothly decay orbit back to 0 when not orbiting
+    if (!isOrbiting.current) {
+      orbitAngle.current *= 0.92;
+      orbitPitch.current *= 0.92;
+    }
+
+    const CAM_DIST = 12;
+    const CAM_HEIGHT = 6.5;
+    // Compute orbit-rotated camera offset relative to car forward
+    const camAngle = Math.atan2(-_forward.x, -_forward.z) + orbitAngle.current;
+    const heightOffset = CAM_HEIGHT + orbitPitch.current * 8;
+
     _camTarget.set(pos.x, visualY + 1.2, pos.z);
     _camPos.set(
-      pos.x - _forward.x * 12,
-      visualY + 6.5,
-      pos.z - _forward.z * 12
+      pos.x + Math.sin(camAngle) * CAM_DIST,
+      visualY + heightOffset,
+      pos.z + Math.cos(camAngle) * CAM_DIST
     );
     camera.position.lerp(_camPos, Math.min(delta * 5, 1));
     camera.lookAt(_camTarget);
