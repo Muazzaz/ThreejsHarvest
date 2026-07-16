@@ -67,6 +67,10 @@ export default function HUD() {
           <kbd className="bg-white/10 border border-white/20 rounded px-1.5 py-0.5 text-[9px] font-mono text-slate-200 select-none shadow-sm">SPACE</kbd>
           <span>Harvest Fruit</span>
         </div>
+        <div className="flex items-center gap-2 text-[11px] text-slate-400 font-medium">
+          <kbd className="bg-white/10 border border-white/20 rounded px-1.5 py-0.5 text-[9px] font-mono text-slate-200 select-none shadow-sm">CTRL + Mouse</kbd>
+          <span>Orbit Camera</span>
+        </div>
       </div>
 
       {/* Zone label — bottom right */}
