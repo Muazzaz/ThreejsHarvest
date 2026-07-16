@@ -32,9 +32,7 @@ export default function Vehicle() {
   const chassisRef = useRef<RapierRigidBody>(null);
   const meshRef = useRef<THREE.Group>(null);
   const wheelRefs = useRef<(THREE.Group | null)[]>([null, null, null, null]);
-  const frontWheelRefs = useRef<(THREE.Group | null)[]>([null, null]);
   const wheelAngle = useRef(0);
-  const steerAngle = useRef(0);
   const orbitAngle = useRef(0);
   const orbitPitch = useRef(0);
   const isOrbiting = useRef(false);
@@ -172,7 +170,7 @@ export default function Vehicle() {
     }
 
     // Snap visual chassis to ground height under the car so it follows terrain curves perfectly
-    const visualY = getTerrainHeight(pos.x, pos.z) + 0.58; // offset so tire bottoms touch ground
+    const visualY = getTerrainHeight(pos.x, pos.z) + 0.38; // 0.38 offset for wheels/chassis alignment
 
     // ── 7. SYNC VISUAL MESH WITH SLOPE ──────────────────────────────────────
     if (meshRef.current) {
@@ -191,16 +189,6 @@ export default function Vehicle() {
     wheelAngle.current -= (currentFwdSpeed / WHEEL_RADIUS) * delta;
     for (const wRef of wheelRefs.current) {
       if (wRef) wRef.rotation.x = wheelAngle.current;
-    }
-
-    // ── FRONT WHEEL STEERING VISUAL ───────────────────────────────────
-    const MAX_STEER_ANGLE = 0.4; // ~23 degrees
-    let targetSteer = 0;
-    if (keys.left) targetSteer = MAX_STEER_ANGLE;
-    if (keys.right) targetSteer = -MAX_STEER_ANGLE;
-    steerAngle.current += (targetSteer - steerAngle.current) * Math.min(delta * 10, 1);
-    for (const fwRef of frontWheelRefs.current) {
-      if (fwRef) fwRef.rotation.y = steerAngle.current;
     }
 
     // ── 8. SMOOTH CAMERA FOLLOW WITH ORBIT ───────────────────────────────
@@ -266,65 +254,61 @@ export default function Vehicle() {
 
       {/* ── Visual mesh (synced in useFrame) ────────────────────────────── */}
       <group ref={meshRef}>
-       <group rotation={[0, Math.PI, 0]}>
-        {/* ── BODY — clean sculpted panels ───────────────────────────────── */}
-        {/* Lower body — the main slab */}
-        <mesh castShadow position={[0, 0.08, 0]}>
-          <boxGeometry args={[1.7, 0.5, 3.0]} />
-          <meshStandardMaterial color="#2d3748" metalness={0.6} roughness={0.35} />
-        </mesh>
-
-        {/* Hood — slightly narrower, slopes down at front */}
-        <mesh castShadow position={[0, 0.36, 0.7]}>
-          <boxGeometry args={[1.6, 0.08, 1.4]} />
-          <meshStandardMaterial color="#2d3748" metalness={0.65} roughness={0.3} />
-        </mesh>
-
-        {/* Cabin — set back, tapered */}
-        <mesh castShadow position={[0, 0.58, -0.25]}>
-          <boxGeometry args={[1.4, 0.42, 1.4]} />
-          <meshStandardMaterial color="#2d3748" metalness={0.6} roughness={0.3} />
-        </mesh>
-
-        {/* Roof — slightly smaller for taper effect */}
-        <mesh position={[0, 0.82, -0.25]}>
-          <boxGeometry args={[1.3, 0.05, 1.3]} />
-          <meshStandardMaterial color="#2d3748" metalness={0.6} roughness={0.3} />
-        </mesh>
-
-        {/* Rear deck / trunk — behind cabin */}
-        <mesh position={[0, 0.36, -1.1]}>
-          <boxGeometry args={[1.6, 0.08, 0.6]} />
-          <meshStandardMaterial color="#2d3748" metalness={0.65} roughness={0.3} />
-        </mesh>
-
-        {/* ── WINDSHIELDS ───────────────────────────────────────────────── */}
-        {/* Front windshield — angled */}
-        <mesh position={[0, 0.58, 0.46]} rotation={[-0.45, 0, 0]}>
-          <planeGeometry args={[1.28, 0.48]} />
-          <meshStandardMaterial color="#87CEEB" transparent opacity={0.5} metalness={0.8} roughness={0.1} side={2} />
-        </mesh>
-        {/* Rear windshield */}
-        <mesh position={[0, 0.58, -0.96]} rotation={[0.35, 0, 0]}>
-          <planeGeometry args={[1.2, 0.42]} />
-          <meshStandardMaterial color="#87CEEB" transparent opacity={0.45} metalness={0.8} roughness={0.1} side={2} />
-        </mesh>
-        {/* Side windows */}
-        {([-0.71, 0.71] as number[]).map((sx) => (
-          <mesh key={`sw-${sx}`} position={[sx, 0.6, -0.25]} rotation={[0, Math.PI / 2, 0]}>
-            <planeGeometry args={[1.15, 0.34]} />
-            <meshStandardMaterial color="#87CEEB" transparent opacity={0.35} metalness={0.8} roughness={0.1} side={2} />
+        <group rotation={[0, Math.PI, 0]}>
+          {/* ── BODY — clean sculpted panels ───────────────────────────────── */}
+          {/* Lower body — the main slab */}
+          <mesh castShadow position={[0, 0.08, 0]}>
+            <boxGeometry args={[1.7, 0.5, 3.0]} />
+            <meshStandardMaterial color="#2d3748" metalness={0.6} roughness={0.35} />
           </mesh>
-        ))}
 
-        {/* ── WHEELS ─────────────────────────────────────────────── */}
-        {([-0.88, 0.88] as number[]).map((sx, si) =>
-          ([1.0, -1.0] as number[]).map((sz, zi) => {
-            const isFront = zi === 0; // sz=1.0 = front (flipped by PI wrapper)
-            return (
-            <group key={`w-${sx}-${sz}`} position={[sx, -0.2, sz]}>
-              {/* Steer group — only front wheels rotate on Y */}
-              <group ref={isFront ? (el) => { frontWheelRefs.current[si] = el; } : undefined}>
+          {/* Hood — slightly narrower, slopes down at front */}
+          <mesh castShadow position={[0, 0.36, 0.7]}>
+            <boxGeometry args={[1.6, 0.08, 1.4]} />
+            <meshStandardMaterial color="#2d3748" metalness={0.65} roughness={0.3} />
+          </mesh>
+
+          {/* Cabin — set back, tapered */}
+          <mesh castShadow position={[0, 0.58, -0.25]}>
+            <boxGeometry args={[1.4, 0.42, 1.4]} />
+            <meshStandardMaterial color="#2d3748" metalness={0.6} roughness={0.3} />
+          </mesh>
+
+          {/* Roof — slightly smaller for taper effect */}
+          <mesh position={[0, 0.82, -0.25]}>
+            <boxGeometry args={[1.3, 0.05, 1.3]} />
+            <meshStandardMaterial color="#2d3748" metalness={0.6} roughness={0.3} />
+          </mesh>
+
+          {/* Rear deck / trunk — behind cabin */}
+          <mesh position={[0, 0.36, -1.1]}>
+            <boxGeometry args={[1.6, 0.08, 0.6]} />
+            <meshStandardMaterial color="#2d3748" metalness={0.65} roughness={0.3} />
+          </mesh>
+
+          {/* ── WINDSHIELDS ───────────────────────────────────────────────── */}
+          {/* Front windshield — angled */}
+          <mesh position={[0, 0.58, 0.46]} rotation={[-0.45, 0, 0]}>
+            <planeGeometry args={[1.28, 0.48]} />
+            <meshStandardMaterial color="#87CEEB" transparent opacity={0.5} metalness={0.8} roughness={0.1} side={2} />
+          </mesh>
+          {/* Rear windshield */}
+          <mesh position={[0, 0.58, -0.96]} rotation={[0.35, 0, 0]}>
+            <planeGeometry args={[1.2, 0.42]} />
+            <meshStandardMaterial color="#87CEEB" transparent opacity={0.45} metalness={0.8} roughness={0.1} side={2} />
+          </mesh>
+          {/* Side windows */}
+          {([-0.71, 0.71] as number[]).map((sx) => (
+            <mesh key={`sw-${sx}`} position={[sx, 0.6, -0.25]} rotation={[0, Math.PI / 2, 0]}>
+              <planeGeometry args={[1.15, 0.34]} />
+              <meshStandardMaterial color="#87CEEB" transparent opacity={0.35} metalness={0.8} roughness={0.1} side={2} />
+            </mesh>
+          ))}
+
+          {/* ── WHEELS ─────────────────────────────────────────────── */}
+          {([-0.88, 0.88] as number[]).map((sx, si) =>
+            ([1.0, -1.0] as number[]).map((sz, zi) => (
+              <group key={`w-${sx}-${sz}`} position={[sx, -0.2, sz]}>
                 {/* Spin group — rotates around X axis (the axle) */}
                 <group ref={(el) => { wheelRefs.current[si * 2 + zi] = el; }}>
                   {/* Tire — torus stands upright, axle along X */}
@@ -339,58 +323,44 @@ export default function Vehicle() {
                   </mesh>
                 </group>
               </group>
-            </group>
-            );
-          })
-        )}
+            ))
+          )}
 
-        {/* ── HEADLIGHTS ────────────────────────────────────────────────── */}
-        {([-0.6, 0.6] as number[]).map((sx) => (
-          <mesh key={`hl-${sx}`} position={[sx, 0.18, 1.52]}>
-            <boxGeometry args={[0.3, 0.1, 0.04]} />
-            <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={3} />
+          {/* ── HEADLIGHTS ────────────────────────────────────────────────── */}
+          {([-0.6, 0.6] as number[]).map((sx) => (
+            <mesh key={`hl-${sx}`} position={[sx, 0.18, 1.52]}>
+              <boxGeometry args={[0.3, 0.1, 0.04]} />
+              <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={3} />
+            </mesh>
+          ))}
+          {/* DRL accent strip */}
+          <mesh position={[0, 0.1, 1.52]}>
+            <boxGeometry args={[1.5, 0.03, 0.03]} />
+            <meshStandardMaterial color="#4ade80" emissive="#4ade80" emissiveIntensity={2.5} />
           </mesh>
-        ))}
-        {/* DRL accent strip */}
-        <mesh position={[0, 0.1, 1.52]}>
-          <boxGeometry args={[1.5, 0.03, 0.03]} />
-          <meshStandardMaterial color="#4ade80" emissive="#4ade80" emissiveIntensity={2.5} />
-        </mesh>
 
-        {/* ── TAILLIGHTS ────────────────────────────────────────────────── */}
-        {([-0.6, 0.6] as number[]).map((sx) => (
-          <mesh key={`tl-${sx}`} position={[sx, 0.18, -1.52]}>
-            <boxGeometry args={[0.3, 0.08, 0.04]} />
-            <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={2} />
+          {/* ── TAILLIGHTS ────────────────────────────────────────────────── */}
+          {([-0.6, 0.6] as number[]).map((sx) => (
+            <mesh key={`tl-${sx}`} position={[sx, 0.18, -1.52]}>
+              <boxGeometry args={[0.3, 0.08, 0.04]} />
+              <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={2} />
+            </mesh>
+          ))}
+          <mesh position={[0, 0.18, -1.53]}>
+            <boxGeometry args={[1.5, 0.025, 0.03]} />
+            <meshStandardMaterial color="#dc2626" emissive="#dc2626" emissiveIntensity={1.2} />
           </mesh>
-        ))}
-        <mesh position={[0, 0.18, -1.53]}>
-          <boxGeometry args={[1.5, 0.025, 0.03]} />
-          <meshStandardMaterial color="#dc2626" emissive="#dc2626" emissiveIntensity={1.2} />
-        </mesh>
 
-        {/* ── GRILLE ────────────────────────────────────────────────────── */}
-        <mesh position={[0, 0.02, 1.52]}>
-          <boxGeometry args={[1.1, 0.2, 0.03]} />
-          <meshStandardMaterial color="#111827" roughness={0.5} metalness={0.4} />
-        </mesh>
-       </group>
+          {/* ── GRILLE ────────────────────────────────────────────────────── */}
+          <mesh position={[0, 0.02, 1.52]}>
+            <boxGeometry args={[1.1, 0.2, 0.03]} />
+            <meshStandardMaterial color="#111827" roughness={0.5} metalness={0.4} />
+          </mesh>
 
-        {/* ── HEADLIGHT BEAMS — outside flip group so targets work correctly ── */}
-        {([-0.5, 0.5] as number[]).map((sx) => (
-          <spotLight
-            key={`spot-${sx}`}
-            position={[sx, 0.2, -1.7]}
-            color="#fef9c3"
-            intensity={15}
-            distance={25}
-            angle={0.5}
-            penumbra={0.4}
-            decay={1.5}
-          >
-            <object3D attach="target" position={[sx * 0.3, -0.3, -14]} />
-          </spotLight>
-        ))}
+          {/* ── HEADLIGHT ILLUMINATION ────────────────────────────────────── */}
+          <pointLight position={[0.5, 0.2, 1.7]} color="#fef9c3" intensity={8} distance={14} />
+          <pointLight position={[-0.5, 0.2, 1.7]} color="#fef9c3" intensity={8} distance={14} />
+        </group>
       </group>
     </>
   );
