@@ -205,6 +205,7 @@ export default function Vehicle() {
 
       {/* ── Visual mesh (synced in useFrame) ────────────────────────────── */}
       <group ref={meshRef}>
+       <group rotation={[0, Math.PI, 0]}>
         {/* ── BODY — clean sculpted panels ───────────────────────────────── */}
         {/* Lower body — the main slab */}
         <mesh castShadow position={[0, 0.08, 0]}>
@@ -310,6 +311,7 @@ export default function Vehicle() {
         {/* ── HEADLIGHT ILLUMINATION ────────────────────────────────────── */}
         <pointLight position={[0.5, 0.2, 1.7]} color="#fef9c3" intensity={8} distance={14} />
         <pointLight position={[-0.5, 0.2, 1.7]} color="#fef9c3" intensity={8} distance={14} />
+       </group>
       </group>
     </>
   );
