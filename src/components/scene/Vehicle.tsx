@@ -32,7 +32,9 @@ export default function Vehicle() {
   const chassisRef = useRef<RapierRigidBody>(null);
   const meshRef = useRef<THREE.Group>(null);
   const wheelRefs = useRef<(THREE.Group | null)[]>([null, null, null, null]);
+  const frontWheelRefs = useRef<(THREE.Group | null)[]>([null, null]);
   const wheelAngle = useRef(0);
+  const steerAngle = useRef(0);
   const orbitAngle = useRef(0);
   const orbitPitch = useRef(0);
   const isOrbiting = useRef(false);
@@ -191,6 +193,16 @@ export default function Vehicle() {
       if (wRef) wRef.rotation.x = wheelAngle.current;
     }
 
+    // ── FRONT WHEEL STEERING VISUAL ───────────────────────────────────
+    const MAX_STEER_ANGLE = 0.4; // ~23 degrees
+    let targetSteer = 0;
+    if (keys.left) targetSteer = MAX_STEER_ANGLE;
+    if (keys.right) targetSteer = -MAX_STEER_ANGLE;
+    steerAngle.current += (targetSteer - steerAngle.current) * Math.min(delta * 10, 1);
+    for (const fwRef of frontWheelRefs.current) {
+      if (fwRef) fwRef.rotation.y = steerAngle.current;
+    }
+
     // ── 8. SMOOTH CAMERA FOLLOW WITH ORBIT ───────────────────────────────
     // Smoothly decay orbit back to 0 when not orbiting
     if (!isOrbiting.current) {
@@ -307,23 +319,29 @@ export default function Vehicle() {
 
         {/* ── WHEELS ─────────────────────────────────────────────── */}
         {([-0.88, 0.88] as number[]).map((sx, si) =>
-          ([1.0, -1.0] as number[]).map((sz, zi) => (
+          ([1.0, -1.0] as number[]).map((sz, zi) => {
+            const isFront = zi === 0; // sz=1.0 = front (flipped by PI wrapper)
+            return (
             <group key={`w-${sx}-${sz}`} position={[sx, -0.2, sz]}>
-              {/* Spin group — rotates around X axis (the axle) */}
-              <group ref={(el) => { wheelRefs.current[si * 2 + zi] = el; }}>
-                {/* Tire — torus stands upright, axle along X */}
-                <mesh rotation={[0, Math.PI / 2, 0]}>
-                  <torusGeometry args={[0.26, 0.12, 8, 16]} />
-                  <meshStandardMaterial color="#111827" roughness={0.92} />
-                </mesh>
-                {/* Rim — cylinder axle along X */}
-                <mesh rotation={[0, 0, Math.PI / 2]}>
-                  <cylinderGeometry args={[0.2, 0.2, 0.16, 12]} />
-                  <meshStandardMaterial color="#9ca3af" metalness={0.85} roughness={0.15} />
-                </mesh>
+              {/* Steer group — only front wheels rotate on Y */}
+              <group ref={isFront ? (el) => { frontWheelRefs.current[si] = el; } : undefined}>
+                {/* Spin group — rotates around X axis (the axle) */}
+                <group ref={(el) => { wheelRefs.current[si * 2 + zi] = el; }}>
+                  {/* Tire — torus stands upright, axle along X */}
+                  <mesh rotation={[0, Math.PI / 2, 0]}>
+                    <torusGeometry args={[0.26, 0.12, 8, 16]} />
+                    <meshStandardMaterial color="#111827" roughness={0.92} />
+                  </mesh>
+                  {/* Rim — cylinder axle along X */}
+                  <mesh rotation={[0, 0, Math.PI / 2]}>
+                    <cylinderGeometry args={[0.2, 0.2, 0.16, 12]} />
+                    <meshStandardMaterial color="#9ca3af" metalness={0.85} roughness={0.15} />
+                  </mesh>
+                </group>
               </group>
             </group>
-          ))
+            );
+          })
         )}
 
         {/* ── HEADLIGHTS ────────────────────────────────────────────────── */}
