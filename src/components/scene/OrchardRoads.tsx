@@ -4,7 +4,7 @@ import { getTerrainHeight } from '../../lib/terrain';
 import { useOrchardStore } from '../../store/useOrchardStore';
 import { getTimeConfig } from '../../lib/timeOfDay';
 
-// Winding "Snake" Road Waypoints traversing through all fruit groves in an S-curve path
+// Snake Road Waypoints traversing all fruit groves in winding curves
 const SNAKE_ROAD_PATH_1: [number, number][] = [
   [0, -85],
   [25, -75],
@@ -32,60 +32,63 @@ const SNAKE_ROAD_PATH_2: [number, number][] = [
   [-35, -60],
 ];
 
-function buildSnakeRoadGeometry(
-  controlPoints: [number, number][],
-  width = 4.4
-): {
+interface RoadMeshGroup {
   roadGeo: THREE.BufferGeometry;
   curbGeo: THREE.BufferGeometry;
-  stripeGeo: THREE.BufferGeometry;
+  centerlineGeo: THREE.BufferGeometry;
+  edgelineGeo: THREE.BufferGeometry;
   lampPositions: { x: number; z: number; rotY: number }[];
-} {
-  // Convert 2D waypoints to 3D CatmullRom curve
+}
+
+function buildSnakeRoadGeometry(
+  controlPoints: [number, number][],
+  width = 4.8
+): RoadMeshGroup {
+  // 1. Create CatmullRomCurve3
   const points3D = controlPoints.map(([x, z]) => new THREE.Vector3(x, getTerrainHeight(x, z), z));
   const curve = new THREE.CatmullRomCurve3(points3D, false, 'centripetal', 0.5);
 
-  const numSamples = controlPoints.length * 28;
+  const totalLen = curve.getLength();
+  const numSamples = Math.max(120, Math.floor(totalLen * 1.8));
   const curvePoints = curve.getSpacedPoints(numSamples);
 
-  const roadVertices: number[] = [];
-  const roadNormals: number[] = [];
+  // Buffer arrays
+  const roadVerts: number[] = [];
+  const roadNorms: number[] = [];
   const roadIndices: number[] = [];
 
-  const curbVertices: number[] = [];
+  const curbVerts: number[] = [];
   const curbIndices: number[] = [];
 
-  const stripeVertices: number[] = [];
-  const stripeIndices: number[] = [];
+  const edgeVerts: number[] = [];
+  const edgeIndices: number[] = [];
 
   const lampPositions: { x: number; z: number; rotY: number }[] = [];
 
   const halfW = width / 2;
-  const curbW = 0.35;
-  const stripeW = 0.16;
+  const curbW = 0.45;
+  const roadElevation = 0.22; // Elevated pitch road height above grass
 
   for (let i = 0; i < curvePoints.length; i++) {
     const pt = curvePoints[i];
-    // Get tangent direction
-    const t = i / (curvePoints.length - 1);
-    const tangent = curve.getTangentAt(Math.min(0.999, Math.max(0.001, t))).normalize();
+    const u = i / (curvePoints.length - 1);
+    const tangent = curve.getTangentAt(Math.min(0.999, Math.max(0.001, u))).normalize();
 
-    // Perpendicular horizontal normal vector
+    // Perpendicular vector
     const normX = -tangent.z;
     const normZ = tangent.x;
 
-    // Road surface left & right
+    // Pitch road edges
     const lx = pt.x + normX * halfW;
     const lz = pt.z + normZ * halfW;
     const rx = pt.x - normX * halfW;
     const rz = pt.z - normZ * halfW;
 
-    // Y heights elevated slightly (+0.14) above terrain to prevent clipping
-    const ly = getTerrainHeight(lx, lz) + 0.14;
-    const ry = getTerrainHeight(rx, rz) + 0.14;
+    const ly = getTerrainHeight(lx, lz) + roadElevation;
+    const ry = getTerrainHeight(rx, rz) + roadElevation;
 
-    roadVertices.push(lx, ly, lz, rx, ry, rz);
-    roadNormals.push(0, 1, 0, 0, 1, 0);
+    roadVerts.push(lx, ly, lz, rx, ry, rz);
+    roadNorms.push(0, 1, 0, 0, 1, 0);
 
     if (i < curvePoints.length - 1) {
       const b = i * 2;
@@ -93,16 +96,17 @@ function buildSnakeRoadGeometry(
       roadIndices.push(b + 1, b + 3, b + 2);
     }
 
-    // Outer Curbs (slightly higher +0.18)
+    // Outer curbs / concrete shoulders
     const clx = pt.x + normX * (halfW + curbW);
     const clz = pt.z + normZ * (halfW + curbW);
     const crx = pt.x - normX * (halfW + curbW);
     const crz = pt.z - normZ * (halfW + curbW);
-    const cly = getTerrainHeight(clx, clz) + 0.18;
-    const cry = getTerrainHeight(crx, crz) + 0.18;
 
-    const cBase = curbVertices.length / 3;
-    curbVertices.push(lx, ly + 0.02, lz, clx, cly, clz, rx, ry + 0.02, rz, crx, cry, crz);
+    const cly = getTerrainHeight(clx, clz) + roadElevation + 0.05;
+    const cry = getTerrainHeight(crx, crz) + roadElevation + 0.05;
+
+    const cBase = curbVerts.length / 3;
+    curbVerts.push(lx, ly, lz, clx, cly, clz, rx, ry, rz, crx, cry, crz);
 
     if (i < curvePoints.length - 1) {
       curbIndices.push(cBase, cBase + 1, cBase + 4);
@@ -112,27 +116,37 @@ function buildSnakeRoadGeometry(
       curbIndices.push(cBase + 3, cBase + 6, cBase + 7);
     }
 
-    // Dashed centerlines (3 steps on, 2 steps off)
-    if (i % 5 < 3) {
-      const slx = pt.x + normX * stripeW;
-      const slz = pt.z + normZ * stripeW;
-      const srx = pt.x - normX * stripeW;
-      const srz = pt.z - normZ * stripeW;
-      const sly = getTerrainHeight(slx, slz) + 0.17;
-      const sry = getTerrainHeight(srx, srz) + 0.17;
+    // White Edge Lines (continuous lines 0.15m inside road edges)
+    const elx = pt.x + normX * (halfW - 0.25);
+    const elz = pt.z + normZ * (halfW - 0.25);
+    const erx = pt.x - normX * (halfW - 0.25);
+    const erz = pt.z - normZ * (halfW - 0.25);
 
-      const sBase = stripeVertices.length / 3;
-      stripeVertices.push(slx, sly, slz, srx, sry, srz);
+    const ely = getTerrainHeight(elx, elz) + roadElevation + 0.02;
+    const ery = getTerrainHeight(erx, erz) + roadElevation + 0.02;
 
-      if (i % 5 < 2 && i < curvePoints.length - 1) {
-        stripeIndices.push(sBase, sBase + 1, sBase + 2);
-        stripeIndices.push(sBase + 1, sBase + 3, sBase + 2);
-      }
+    const eW = 0.08;
+    const eBase = edgeVerts.length / 3;
+
+    edgeVerts.push(
+      elx - normX * eW, ely, elz - normZ * eW,
+      elx + normX * eW, ely, elz + normZ * eW,
+      erx - normX * eW, ery, erz - normZ * eW,
+      erx + normX * eW, ery, erz + normZ * eW
+    );
+
+    if (i < curvePoints.length - 1) {
+      // Left edge line quad
+      edgeIndices.push(eBase, eBase + 1, eBase + 4);
+      edgeIndices.push(eBase + 1, eBase + 5, eBase + 4);
+      // Right edge line quad
+      edgeIndices.push(eBase + 2, eBase + 3, eBase + 6);
+      edgeIndices.push(eBase + 3, eBase + 7, eBase + 6);
     }
 
-    // Street lamp placements along the snake road edge every ~14 steps
-    if (i % 14 === 4 && i > 3 && i < curvePoints.length - 4) {
-      const side = (i / 14) % 2 === 0 ? 1 : -1;
+    // Street lamp placements along road edges every ~16 steps
+    if (i % 16 === 5 && i > 3 && i < curvePoints.length - 4) {
+      const side = (i / 16) % 2 === 0 ? 1 : -1;
       const lampX = pt.x + normX * (halfW + 1.8) * side;
       const lampZ = pt.z + normZ * (halfW + 1.8) * side;
       const rotY = Math.atan2(tangent.x, tangent.z) + (side > 0 ? Math.PI / 2 : -Math.PI / 2);
@@ -140,22 +154,72 @@ function buildSnakeRoadGeometry(
     }
   }
 
+  // Build Dashed Centerline Quads
+  const dashVerts: number[] = [];
+  const dashIndices: number[] = [];
+  const dashLen = 2.8;
+  const gapLen = 2.0;
+  const dashCycle = dashLen + gapLen;
+  const numDashes = Math.floor(totalLen / dashCycle);
+  const stripeW = 0.12;
+
+  for (let d = 0; d < numDashes; d++) {
+    const distStart = d * dashCycle;
+    const distEnd = distStart + dashLen;
+
+    const uStart = Math.min(0.99, distStart / totalLen);
+    const uEnd = Math.min(0.999, distEnd / totalLen);
+
+    const ptStart = curve.getPointAt(uStart);
+    const ptEnd = curve.getPointAt(uEnd);
+
+    const tanStart = curve.getTangentAt(uStart).normalize();
+    const tanEnd = curve.getTangentAt(uEnd).normalize();
+
+    const nSx = -tanStart.z;
+    const nSz = tanStart.x;
+    const nEx = -tanEnd.z;
+    const nEz = tanEnd.x;
+
+    const yStart = getTerrainHeight(ptStart.x, ptStart.z) + roadElevation + 0.03;
+    const yEnd = getTerrainHeight(ptEnd.x, ptEnd.z) + roadElevation + 0.03;
+
+    const vBase = dashVerts.length / 3;
+
+    // 4 corners of the dashed rectangle
+    dashVerts.push(
+      ptStart.x + nSx * stripeW, yStart, ptStart.z + nSz * stripeW,
+      ptStart.x - nSx * stripeW, yStart, ptStart.z - nSz * stripeW,
+      ptEnd.x + nEx * stripeW, yEnd, ptEnd.z + nEz * stripeW,
+      ptEnd.x - nEx * stripeW, yEnd, ptEnd.z - nEz * stripeW
+    );
+
+    dashIndices.push(vBase, vBase + 1, vBase + 2);
+    dashIndices.push(vBase + 1, vBase + 3, vBase + 2);
+  }
+
+  // Create BufferGeometries
   const roadGeo = new THREE.BufferGeometry();
-  roadGeo.setAttribute('position', new THREE.Float32BufferAttribute(roadVertices, 3));
-  roadGeo.setAttribute('normal', new THREE.Float32BufferAttribute(roadNormals, 3));
+  roadGeo.setAttribute('position', new THREE.Float32BufferAttribute(roadVerts, 3));
+  roadGeo.setAttribute('normal', new THREE.Float32BufferAttribute(roadNorms, 3));
   roadGeo.setIndex(roadIndices);
 
   const curbGeo = new THREE.BufferGeometry();
-  curbGeo.setAttribute('position', new THREE.Float32BufferAttribute(curbVertices, 3));
+  curbGeo.setAttribute('position', new THREE.Float32BufferAttribute(curbVerts, 3));
   curbGeo.setIndex(curbIndices);
   curbGeo.computeVertexNormals();
 
-  const stripeGeo = new THREE.BufferGeometry();
-  stripeGeo.setAttribute('position', new THREE.Float32BufferAttribute(stripeVertices, 3));
-  stripeGeo.setIndex(stripeIndices);
-  stripeGeo.computeVertexNormals();
+  const edgelineGeo = new THREE.BufferGeometry();
+  edgelineGeo.setAttribute('position', new THREE.Float32BufferAttribute(edgeVerts, 3));
+  edgelineGeo.setIndex(edgeIndices);
+  edgelineGeo.computeVertexNormals();
 
-  return { roadGeo, curbGeo, stripeGeo, lampPositions };
+  const centerlineGeo = new THREE.BufferGeometry();
+  centerlineGeo.setAttribute('position', new THREE.Float32BufferAttribute(dashVerts, 3));
+  centerlineGeo.setIndex(dashIndices);
+  centerlineGeo.computeVertexNormals();
+
+  return { roadGeo, curbGeo, centerlineGeo, edgelineGeo, lampPositions };
 }
 
 // Single Street Lamp component
@@ -169,31 +233,31 @@ export function StreetLamp({ x, z, rotationY = 0 }: { x: number; z: number; rota
     <group position={[x, groundY, z]} rotation={[0, rotationY, 0]}>
       {/* Base flange */}
       <mesh position={[0, 0.1, 0]}>
-        <cylinderGeometry args={[0.25, 0.35, 0.2, 8]} />
+        <cylinderGeometry args={[0.3, 0.4, 0.2, 8]} />
         <meshStandardMaterial color="#0f172a" metalness={0.8} roughness={0.3} />
       </mesh>
 
       {/* Main vertical post */}
-      <mesh position={[0, 2.2, 0]}>
-        <cylinderGeometry args={[0.09, 0.14, 4.4, 10]} />
+      <mesh position={[0, 2.3, 0]}>
+        <cylinderGeometry args={[0.1, 0.15, 4.6, 10]} />
         <meshStandardMaterial color="#1e293b" metalness={0.85} roughness={0.2} />
       </mesh>
 
-      {/* Curved lamp arm */}
-      <mesh position={[0.45, 4.35, 0]} rotation={[0, 0, -Math.PI / 4]}>
-        <cylinderGeometry args={[0.06, 0.06, 1.0, 8]} />
+      {/* Curved arm */}
+      <mesh position={[0.5, 4.5, 0]} rotation={[0, 0, -Math.PI / 4]}>
+        <cylinderGeometry args={[0.07, 0.07, 1.1, 8]} />
         <meshStandardMaterial color="#1e293b" metalness={0.85} roughness={0.2} />
       </mesh>
 
-      {/* Modern Lamp Fixture Head */}
-      <mesh position={[0.8, 4.45, 0]}>
-        <boxGeometry args={[0.5, 0.14, 0.32]} />
+      {/* Lamp Head Fixture */}
+      <mesh position={[0.9, 4.6, 0]}>
+        <boxGeometry args={[0.55, 0.16, 0.35]} />
         <meshStandardMaterial color="#020617" metalness={0.9} roughness={0.15} />
       </mesh>
 
-      {/* Emissive Lamp Glass Lens */}
-      <mesh position={[0.8, 4.37, 0]}>
-        <boxGeometry args={[0.42, 0.04, 0.26]} />
+      {/* Emissive Lamp Glass */}
+      <mesh position={[0.9, 4.51, 0]}>
+        <boxGeometry args={[0.45, 0.04, 0.28]} />
         <meshStandardMaterial
           color="#ffffff"
           emissive={isNight ? '#fef08a' : '#64748b'}
@@ -201,20 +265,20 @@ export function StreetLamp({ x, z, rotationY = 0 }: { x: number; z: number; rota
         />
       </mesh>
 
-      {/* Street Lamp Illumination */}
+      {/* Street Light Illumination */}
       {isNight && (
         <>
           <pointLight
-            position={[0.8, 4.1, 0]}
+            position={[0.9, 4.2, 0]}
             color="#fef08a"
-            intensity={7}
-            distance={20}
-            decay={1.8}
+            intensity={7.5}
+            distance={22}
+            decay={1.7}
           />
-          {/* Soft circular ground light pool under lamp */}
-          <mesh position={[0.8, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <circleGeometry args={[5.0, 24]} />
-            <meshBasicMaterial color="#fef08a" transparent opacity={0.15} />
+          {/* Soft ground illumination pool */}
+          <mesh position={[0.9, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[5.5, 24]} />
+            <meshBasicMaterial color="#fef08a" transparent opacity={0.16} />
           </mesh>
         </>
       )}
@@ -223,68 +287,81 @@ export function StreetLamp({ x, z, rotationY = 0 }: { x: number; z: number; rota
 }
 
 export default function OrchardRoads() {
-  const road1 = useMemo(() => buildSnakeRoadGeometry(SNAKE_ROAD_PATH_1, 4.4), []);
-  const road2 = useMemo(() => buildSnakeRoadGeometry(SNAKE_ROAD_PATH_2, 4.4), []);
+  const road1 = useMemo(() => buildSnakeRoadGeometry(SNAKE_ROAD_PATH_1, 4.8), []);
+  const road2 = useMemo(() => buildSnakeRoadGeometry(SNAKE_ROAD_PATH_2, 4.8), []);
 
   return (
     <group>
-      {/* ── Central Plaza Roundabout ── */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.12, 0]}>
-        <ringGeometry args={[3.0, 8.0, 32]} />
+      {/* ── Central Pitch Roundabout Plaza ── */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.22, 0]}>
+        <ringGeometry args={[3.0, 8.5, 36]} />
         <meshStandardMaterial
-          color="#1e293b"
-          roughness={0.75}
+          color="#111827"
+          roughness={0.88}
           polygonOffset
-          polygonOffsetFactor={-10}
-          polygonOffsetUnits={-10}
+          polygonOffsetFactor={-12}
+          polygonOffsetUnits={-12}
         />
+      </mesh>
+      {/* Roundabout Outer Concrete Curb */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.23, 0]}>
+        <ringGeometry args={[8.4, 9.0, 36]} />
+        <meshStandardMaterial color="#475569" roughness={0.5} />
       </mesh>
       {/* Central Island Yellow Safety Ring */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.14, 0]}>
-        <ringGeometry args={[2.8, 3.2, 32]} />
-        <meshBasicMaterial color="#facc15" />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.25, 0]}>
+        <ringGeometry args={[2.7, 3.2, 36]} />
+        <meshBasicMaterial color="#fbbf24" />
       </mesh>
 
-      {/* ── Snake Road 1 (S-Curve Highway) ── */}
-      {/* Asphalt Surface */}
+      {/* ── Snake Road 1 (Pitch Asphalt Highway) ── */}
+      {/* Dark Pitch Asphalt Surface */}
       <mesh receiveShadow geometry={road1.roadGeo}>
         <meshStandardMaterial
-          color="#1e293b"
-          roughness={0.75}
-          metalness={0.15}
+          color="#111827"
+          roughness={0.88}
+          metalness={0.08}
           polygonOffset
-          polygonOffsetFactor={-8}
-          polygonOffsetUnits={-8}
+          polygonOffsetFactor={-12}
+          polygonOffsetUnits={-12}
         />
       </mesh>
-      {/* Side Curbs */}
+      {/* Concrete Shoulders / Curbs */}
       <mesh geometry={road1.curbGeo}>
-        <meshStandardMaterial color="#475569" roughness={0.6} />
+        <meshStandardMaterial color="#334155" roughness={0.6} />
       </mesh>
-      {/* Centerline Stripes */}
-      <mesh geometry={road1.stripeGeo}>
-        <meshBasicMaterial color="#facc15" />
+      {/* White Outer Edge Lines */}
+      <mesh geometry={road1.edgelineGeo}>
+        <meshBasicMaterial color="#ffffff" />
+      </mesh>
+      {/* Yellow Dashed Centerline Markings */}
+      <mesh geometry={road1.centerlineGeo}>
+        <meshBasicMaterial color="#fbbf24" />
       </mesh>
 
-      {/* ── Snake Road 2 (Loop Highway) ── */}
-      {/* Asphalt Surface */}
+      {/* ── Snake Road 2 (Pitch Asphalt Loop Highway) ── */}
+      {/* Dark Pitch Asphalt Surface */}
       <mesh receiveShadow geometry={road2.roadGeo}>
         <meshStandardMaterial
-          color="#1e293b"
-          roughness={0.75}
-          metalness={0.15}
+          color="#111827"
+          roughness={0.88}
+          metalness={0.08}
           polygonOffset
-          polygonOffsetFactor={-8}
-          polygonOffsetUnits={-8}
+          polygonOffsetFactor={-12}
+          polygonOffsetUnits={-12}
         />
       </mesh>
-      {/* Side Curbs */}
+      {/* Concrete Shoulders / Curbs */}
       <mesh geometry={road2.curbGeo}>
-        <meshStandardMaterial color="#475569" roughness={0.6} />
+        <meshStandardMaterial color="#334155" roughness={0.6} />
       </mesh>
-      {/* Centerline Stripes */}
-      <mesh geometry={road2.stripeGeo}>
+      {/* White Outer Edge Lines */}
+      <mesh geometry={road2.edgelineGeo}>
         <meshBasicMaterial color="#ffffff" />
+      </mesh>
+      {/* Yellow Dashed Centerline Markings */}
+      <mesh geometry={road2.centerlineGeo}>
+        <meshBasicMaterial color="#fbbf24" />
       </mesh>
 
       {/* ── Street Lamps Along Snake Roads ── */}
