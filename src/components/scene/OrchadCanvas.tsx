@@ -1,22 +1,24 @@
-import { Sky } from '@react-three/drei';
+import { Sky, Stars } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useVehicleControls } from '../../hooks/useVehicleControls';
+import { getTimeConfig, type TimeConfig } from '../../lib/timeOfDay';
+import { useOrchardStore } from '../../store/useOrchardStore';
 import Orchard from './Orchard';
 import Terrain from './Terrain';
 import Vehicle from './Vehicle';
 
-function SceneContent() {
+function SceneContent({ timeConfig }: { timeConfig: TimeConfig }) {
   useVehicleControls(); // register key listeners
 
   return (
     <Physics gravity={[0, -20, 0]} timeStep={1 / 60}>
       {/* Lighting */}
-      <ambientLight intensity={0.6} />
+      <ambientLight intensity={timeConfig.ambientLightIntensity} />
       <directionalLight
-        position={[80, 120, 60]}
-        intensity={1.8}
+        position={timeConfig.sunPosition}
+        intensity={timeConfig.directionalLightIntensity}
         castShadow
         shadow-mapSize={[1024, 1024]}
         shadow-camera-far={200}
@@ -24,40 +26,67 @@ function SceneContent() {
         shadow-camera-right={80}
         shadow-camera-top={80}
         shadow-camera-bottom={-80}
-        color="#fff8e7"
+        color={timeConfig.directionalLightColor}
       />
-      <hemisphereLight args={['#87ceeb', '#4a7c59', 0.4]} />
+      <hemisphereLight
+        args={[timeConfig.hemisphereSky, timeConfig.hemisphereGround, timeConfig.hemisphereIntensity]}
+      />
 
       {/* Sky atmosphere */}
       <Sky
         distance={4500}
-        sunPosition={[100, 40, 80]}
+        sunPosition={timeConfig.sunPosition}
         inclination={0.5}
         azimuth={0.25}
-        rayleigh={0.8}
-        turbidity={6}
+        rayleigh={timeConfig.skyRayleigh}
+        turbidity={timeConfig.skyTurbidity}
       />
-      <fog attach="fog" args={['#a8d5a2', 100, 280]} />
+
+      {/* Night / Sunset Stars */}
+      {timeConfig.starsVisible && (
+        <Stars
+          radius={120}
+          depth={50}
+          count={timeConfig.starsCount}
+          factor={4}
+          saturation={0.5}
+          fade
+          speed={1}
+        />
+      )}
+
+      {/* Dynamic Fog */}
+      <fog attach="fog" args={[timeConfig.fogColor, timeConfig.fogNear, timeConfig.fogFar]} />
 
       {/* Scene objects */}
       <Terrain />
       <Orchard />
-      <Vehicle />
+      <Vehicle headlightsIntensity={timeConfig.headlightsIntensity} isNight={timeConfig.isNight} />
     </Physics>
   );
 }
 
 export default function OrchadCanvas() {
+  const timeMode = useOrchardStore((s) => s.timeMode);
+  const [timeConfig, setTimeConfig] = useState(() => getTimeConfig(timeMode));
+
+  useEffect(() => {
+    const update = () => setTimeConfig(getTimeConfig(timeMode));
+    update();
+    const interval = setInterval(update, 5000);
+    return () => clearInterval(interval);
+  }, [timeMode]);
+
   return (
     <Canvas
       shadows
       dpr={[1, 1.5]}
       camera={{ position: [0, 12, 20], fov: 60, near: 0.5, far: 350 }}
       gl={{ antialias: false, toneMapping: 5 /* ACESFilmic */, powerPreference: 'high-performance' }}
-      style={{ width: '100vw', height: '100vh', background: '#87ceeb' }}
+      style={{ width: '100vw', height: '100vh', background: timeConfig.canvasBackground }}
     >
       <Suspense fallback={null}>
-        <SceneContent />
+        <SceneContent timeConfig={timeConfig} />
       </Suspense>
     </Canvas>
   );

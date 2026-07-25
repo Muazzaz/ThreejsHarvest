@@ -1,12 +1,23 @@
+import { useEffect, useState } from 'react';
+import { getTimeConfig } from '../../lib/timeOfDay';
 import { useOrchardStore } from '../../store/useOrchardStore';
 import CartPanel from './CartPanel';
 import HarvestPrompt from './HarvestPrompt';
 
 export default function HUD() {
-  const { totalItems, totalWeight, totalPrice, setCartOpen, cartOpen, setMode } =
+  const { totalItems, totalWeight, totalPrice, setCartOpen, cartOpen, setMode, timeMode, setTimeMode } =
     useOrchardStore();
   const count = totalItems();
   const weight = totalWeight();
+  const [timeConfig, setTimeConfig] = useState(() => getTimeConfig(timeMode));
+  const [showTimeMenu, setShowTimeMenu] = useState(false);
+
+  useEffect(() => {
+    const update = () => setTimeConfig(getTimeConfig(timeMode));
+    update();
+    const interval = setInterval(update, 5000);
+    return () => clearInterval(interval);
+  }, [timeMode]);
 
   return (
     <>
@@ -22,7 +33,59 @@ export default function HUD() {
         </div>
 
         {/* Right actions */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 md:gap-2.5">
+          {/* Time of Day Indicator & Menu */}
+          <div className="relative">
+            <button
+              className="flex items-center gap-1.5 bg-[#0f1f35]/70 border border-emerald-500/25 hover:border-emerald-400/50 hover:bg-emerald-500/15 rounded-full px-3 py-2 text-slate-200 text-xs font-semibold cursor-pointer backdrop-blur-md transition-all duration-200 select-none shadow-md"
+              onClick={() => setShowTimeMenu(!showTimeMenu)}
+              title="Click to change orchard time mode"
+            >
+              <span>{timeConfig.badgeIcon}</span>
+              <span className="hidden sm:inline font-medium text-slate-200">
+                {timeConfig.badgeName}
+              </span>
+              <span className="text-[10px] text-emerald-400 font-mono bg-black/40 rounded px-1.5 py-0.5">
+                {timeConfig.formattedTime}
+              </span>
+            </button>
+
+            {showTimeMenu && (
+              <div className="absolute top-full right-0 mt-2 w-52 bg-[#0b1728]/95 border border-emerald-500/30 rounded-2xl p-2 shadow-2xl backdrop-blur-xl z-50 flex flex-col gap-1">
+                <div className="px-2 py-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                  Orchard Atmosphere
+                </div>
+                {(
+                  [
+                    { id: 'auto', label: 'Local System Sync', icon: '⏰', desc: 'Syncs live with your clock' },
+                    { id: 'day', label: 'Daytime', icon: '☀️', desc: 'Bright sunny hills' },
+                    { id: 'sunset', label: 'Golden Sunset', icon: '🌅', desc: 'Warm dusk lights' },
+                    { id: 'night', label: 'Night Orchard', icon: '🌙', desc: 'Moonlight, stars & headlights' },
+                  ] as const
+                ).map((opt) => (
+                  <button
+                    key={opt.id}
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-left transition-all cursor-pointer ${
+                      timeMode === opt.id
+                        ? 'bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30'
+                        : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                    }`}
+                    onClick={() => {
+                      setTimeMode(opt.id);
+                      setShowTimeMenu(false);
+                    }}
+                  >
+                    <span className="text-base">{opt.icon}</span>
+                    <div className="flex flex-col">
+                      <span>{opt.label}</span>
+                      <span className="text-[9px] text-slate-400 font-normal">{opt.desc}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Home button */}
           <button
             className="flex items-center gap-1.5 bg-[#0f1f35]/50 border border-white/15 hover:border-white/30 hover:bg-white/10 rounded-full px-3 py-2 text-slate-300 hover:text-white text-xs font-semibold cursor-pointer backdrop-blur-md transition-all duration-200 select-none shadow-md"

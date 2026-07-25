@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { FruitType } from "../lib/products";
 import { PRODUCTS } from "../lib/products";
+import type { TimeMode } from "../lib/timeOfDay";
 
 export interface CartItem {
   id: FruitType;
@@ -24,6 +25,10 @@ interface OrchardStore {
   // App mode
   mode: AppMode;
   setMode: (m: AppMode) => void;
+
+  // Time of Day mode
+  timeMode: TimeMode;
+  setTimeMode: (tm: TimeMode) => void;
 
   // Checkout step
   checkoutStep: CheckoutStep;
@@ -59,6 +64,9 @@ interface OrchardStore {
 export const useOrchardStore = create<OrchardStore>((set, get) => ({
   mode: "landing",
   setMode: (m) => set({ mode: m }),
+
+  timeMode: "auto",
+  setTimeMode: (tm) => set({ timeMode: tm }),
 
   checkoutStep: "cart",
   setCheckoutStep: (s) => set({ checkoutStep: s }),

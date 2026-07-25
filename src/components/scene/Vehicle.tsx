@@ -28,7 +28,12 @@ const _carRight = new THREE.Vector3();
 const _carFwd = new THREE.Vector3();
 const _basisMat = new THREE.Matrix4();
 
-export default function Vehicle() {
+interface VehicleProps {
+  headlightsIntensity?: number;
+  isNight?: boolean;
+}
+
+export default function Vehicle({ headlightsIntensity = 8, isNight = false }: VehicleProps) {
   const chassisRef = useRef<RapierRigidBody>(null);
   const meshRef = useRef<THREE.Group>(null);
   const wheelRefs = useRef<(THREE.Group | null)[]>([null, null, null, null]);
@@ -348,25 +353,33 @@ export default function Vehicle() {
           {([-0.6, 0.6] as number[]).map((sx) => (
             <mesh key={`hl-${sx}`} position={[sx, 0.18, 1.52]}>
               <boxGeometry args={[0.3, 0.1, 0.04]} />
-              <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={3} />
+              <meshStandardMaterial
+                color="#ffffff"
+                emissive="#fef08a"
+                emissiveIntensity={isNight ? 6 : 2}
+              />
             </mesh>
           ))}
           {/* DRL accent strip */}
           <mesh position={[0, 0.1, 1.52]}>
             <boxGeometry args={[1.5, 0.03, 0.03]} />
-            <meshStandardMaterial color="#4ade80" emissive="#4ade80" emissiveIntensity={2.5} />
+            <meshStandardMaterial
+              color="#4ade80"
+              emissive="#4ade80"
+              emissiveIntensity={isNight ? 3.5 : 2}
+            />
           </mesh>
 
           {/* ── TAILLIGHTS ────────────────────────────────────────────────── */}
           {([-0.6, 0.6] as number[]).map((sx) => (
             <mesh key={`tl-${sx}`} position={[sx, 0.18, -1.52]}>
               <boxGeometry args={[0.3, 0.08, 0.04]} />
-              <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={2} />
+              <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={isNight ? 4 : 2} />
             </mesh>
           ))}
           <mesh position={[0, 0.18, -1.53]}>
             <boxGeometry args={[1.5, 0.025, 0.03]} />
-            <meshStandardMaterial color="#dc2626" emissive="#dc2626" emissiveIntensity={1.2} />
+            <meshStandardMaterial color="#dc2626" emissive="#dc2626" emissiveIntensity={isNight ? 2.5 : 1.2} />
           </mesh>
 
           {/* ── GRILLE ────────────────────────────────────────────────────── */}
@@ -376,8 +389,32 @@ export default function Vehicle() {
           </mesh>
 
           {/* ── HEADLIGHT ILLUMINATION ────────────────────────────────────── */}
-          <pointLight position={[0.5, 0.2, 1.7]} color="#fef9c3" intensity={8} distance={14} />
-          <pointLight position={[-0.5, 0.2, 1.7]} color="#fef9c3" intensity={8} distance={14} />
+          <pointLight position={[0.5, 0.2, 1.7]} color="#fef9c3" intensity={headlightsIntensity} distance={16} />
+          <pointLight position={[-0.5, 0.2, 1.7]} color="#fef9c3" intensity={headlightsIntensity} distance={16} />
+
+          {/* Forward light beam spotlights for night driving */}
+          {isNight && (
+            <>
+              <spotLight
+                position={[0.5, 0.3, 1.6]}
+                target-position={[0.5, -0.5, 25]}
+                color="#fffbeb"
+                intensity={headlightsIntensity * 2.5}
+                distance={35}
+                angle={0.55}
+                penumbra={0.4}
+              />
+              <spotLight
+                position={[-0.5, 0.3, 1.6]}
+                target-position={[-0.5, -0.5, 25]}
+                color="#fffbeb"
+                intensity={headlightsIntensity * 2.5}
+                distance={35}
+                angle={0.55}
+                penumbra={0.4}
+              />
+            </>
+          )}
         </group>
       </group>
     </>
