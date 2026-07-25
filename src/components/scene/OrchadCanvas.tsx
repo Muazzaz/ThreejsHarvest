@@ -6,6 +6,7 @@ import { useVehicleControls } from '../../hooks/useVehicleControls';
 import { getTimeConfig, type TimeConfig } from '../../lib/timeOfDay';
 import { useOrchardStore } from '../../store/useOrchardStore';
 import Orchard from './Orchard';
+import OrchardRoads from './OrchardRoads';
 import Terrain from './Terrain';
 import Vehicle from './Vehicle';
 
@@ -60,6 +61,7 @@ function SceneContent({ timeConfig }: { timeConfig: TimeConfig }) {
 
       {/* Scene objects */}
       <Terrain />
+      <OrchardRoads />
       <Orchard />
       <Vehicle headlightsIntensity={timeConfig.headlightsIntensity} isNight={timeConfig.isNight} />
     </Physics>
