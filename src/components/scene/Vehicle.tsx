@@ -37,10 +37,16 @@ function HeadlightSpot({
   position,
   targetPosition,
   intensity,
+  angle = 0.55,
+  penumbra = 0.7,
+  distance = 42,
 }: {
   position: [number, number, number];
   targetPosition: [number, number, number];
   intensity: number;
+  angle?: number;
+  penumbra?: number;
+  distance?: number;
 }) {
   const spotRef = useRef<THREE.SpotLight>(null);
   const targetRef = useRef<THREE.Group>(null);
@@ -59,9 +65,9 @@ function HeadlightSpot({
         position={position}
         color="#fffbeb"
         intensity={intensity}
-        distance={45}
-        angle={0.5}
-        penumbra={0.4}
+        distance={distance}
+        angle={angle}
+        penumbra={penumbra}
         castShadow={false}
       />
     </>
@@ -424,28 +430,35 @@ export default function Vehicle({ headlightsIntensity = 8, isNight = false }: Ve
           </mesh>
 
           {/* ── HEADLIGHT ILLUMINATION ────────────────────────────────────── */}
-          <pointLight position={[0.5, 0.2, 1.7]} color="#fef9c3" intensity={headlightsIntensity} distance={16} />
-          <pointLight position={[-0.5, 0.2, 1.7]} color="#fef9c3" intensity={headlightsIntensity} distance={16} />
+          {/* Subtle bulb glow right at the headlight housing */}
+          <pointLight
+            position={[0, 0.2, 1.65]}
+            color="#fffebc"
+            intensity={isNight ? 4 : 1.5}
+            distance={4}
+          />
 
-          {/* Forward light beam spotlights and ground glow for night driving */}
+          {/* Clean forward headlight projection beam for night driving */}
           {isNight && (
             <>
-              {/* Left spotlight targeting 25 units straight ahead */}
+              {/* Left headlight beam */}
               <HeadlightSpot
                 position={[0.55, 0.25, 1.6]}
-                targetPosition={[0.55, -0.4, 28]}
-                intensity={headlightsIntensity * 3.5}
+                targetPosition={[0.55, -1.2, 35]}
+                intensity={headlightsIntensity * 4}
+                angle={0.55}
+                penumbra={0.8}
+                distance={40}
               />
-              {/* Right spotlight targeting 28 units straight ahead */}
+              {/* Right headlight beam */}
               <HeadlightSpot
                 position={[-0.55, 0.25, 1.6]}
-                targetPosition={[-0.55, -0.4, 28]}
-                intensity={headlightsIntensity * 3.5}
+                targetPosition={[-0.55, -1.2, 35]}
+                intensity={headlightsIntensity * 4}
+                angle={0.55}
+                penumbra={0.8}
+                distance={40}
               />
-
-              {/* Forward ground illuminated pools extending ahead of the buggy */}
-              <pointLight position={[0, -0.1, 7]} color="#fef08a" intensity={headlightsIntensity * 1.2} distance={20} />
-              <pointLight position={[0, -0.1, 16]} color="#fef08a" intensity={headlightsIntensity * 0.8} distance={25} />
             </>
           )}
         </group>
