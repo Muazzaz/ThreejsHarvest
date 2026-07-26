@@ -67,11 +67,6 @@ export default function Terrain() {
         </mesh>
       </RigidBody>
 
-      {/* ── Decorative start pad (flat because center is flattened) ── */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
-        <circleGeometry args={[5, 32]} />
-        <meshBasicMaterial color="#4ade80" transparent opacity={0.3} />
-      </mesh>
     </group>
   );
 }

@@ -217,8 +217,8 @@ export default function Vehicle({ headlightsIntensity = 8, isNight = false }: Ve
       body.setAngvel({ x: 0, y: yAngVel, z: 0 }, true);
     }
 
-    // Snap visual chassis to ground height under the car so it follows terrain curves perfectly
-    const visualY = getTerrainHeight(pos.x, pos.z) + 0.58; // offset so tire bottoms touch ground
+    // Snap visual chassis to road/ground height under the car so it follows terrain and road surface
+    const visualY = getTerrainHeight(pos.x, pos.z) + 0.06 + 0.58; // 0.06m road elevation + 0.58m tire radius offset
 
     // ── 7. SYNC VISUAL MESH WITH SLOPE ──────────────────────────────────────
     if (meshRef.current) {
@@ -405,8 +405,8 @@ export default function Vehicle({ headlightsIntensity = 8, isNight = false }: Ve
           <mesh position={[0, 0.1, 1.52]}>
             <boxGeometry args={[1.5, 0.03, 0.03]} />
             <meshStandardMaterial
-              color="#4ade80"
-              emissive="#4ade80"
+              color="#ffffff"
+              emissive="#e2e8f0"
               emissiveIntensity={isNight ? 3.5 : 2}
             />
           </mesh>
