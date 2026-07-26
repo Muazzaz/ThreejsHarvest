@@ -4,32 +4,31 @@ import { getTerrainHeight } from '../../lib/terrain';
 import { useOrchardStore } from '../../store/useOrchardStore';
 import { getTimeConfig } from '../../lib/timeOfDay';
 
-// Snake Road Waypoints traversing all fruit groves in winding curves
+// Continuous 2-lane Highway Loop Waypoints traversing all fruit groves in seamless circuits
 const SNAKE_ROAD_PATH_1: [number, number][] = [
-  [0, -85],
-  [25, -75],
-  [-30, -55],
-  [20, -35],
-  [-15, -15],
   [0, 0],
-  [-25, 20],
-  [30, 35],
-  [65, 15],
-  [70, -20],
-  [45, -50],
+  [25, -20],
+  [50, -35],
+  [65, -60],
+  [35, -80],
+  [0, -85],
+  [-35, -78],
+  [-55, -55],
+  [-40, -30],
+  [-18, -12],
 ];
 
 const SNAKE_ROAD_PATH_2: [number, number][] = [
   [0, 0],
-  [35, -5],
-  [60, -15],
-  [75, 15],
-  [50, 50],
-  [10, 75],
-  [-35, 65],
-  [-65, 25],
-  [-60, -25],
-  [-35, -60],
+  [25, 18],
+  [55, 30],
+  [75, 55],
+  [45, 80],
+  [0, 85],
+  [-45, 78],
+  [-70, 45],
+  [-65, 10],
+  [-40, -10],
 ];
 
 interface RoadMeshGroup {
@@ -47,12 +46,12 @@ function buildSnakeRoadGeometry(
   laneWidth = 2.6,
   dividerWidth = 0.8
 ): RoadMeshGroup {
-  // 1. Create CatmullRomCurve3
+  // 1. Create CatmullRomCurve3 (closed = true for a 100% continuous endless highway loop)
   const points3D = controlPoints.map(([x, z]) => new THREE.Vector3(x, getTerrainHeight(x, z), z));
-  const curve = new THREE.CatmullRomCurve3(points3D, false, 'centripetal', 0.5);
+  const curve = new THREE.CatmullRomCurve3(points3D, true, 'centripetal', 0.5);
 
   const totalLen = curve.getLength();
-  const numSamples = Math.max(140, Math.floor(totalLen * 2.0));
+  const numSamples = Math.max(160, Math.floor(totalLen * 2.0));
   const curvePoints = curve.getSpacedPoints(numSamples);
 
   // Buffer arrays
@@ -83,13 +82,21 @@ function buildSnakeRoadGeometry(
   const outerDist = dHalf + laneWidth; // 3.0m from center
   const curbW = 0.45;
   const roadElevation = 0.22; // Height of pitch lanes above grass
-  const dividerH = 0.14; // Height of central divider above pitch road (0.36m total)
-  const barrierH = 0.42; // Guardrail height above divider top (0.78m total)
+  const maxDividerH = 0.14; // Max height of central divider above pitch road
+  const maxBarrierH = 0.42; // Guardrail height above divider top
 
   for (let i = 0; i < curvePoints.length; i++) {
     const pt = curvePoints[i];
     const u = i / (curvePoints.length - 1);
     const tangent = curve.getTangentAt(Math.min(0.999, Math.max(0.001, u))).normalize();
+
+    // Distance from central roundabout plaza at [0, 0]
+    const distFromCenter = Math.sqrt(pt.x * pt.x + pt.z * pt.z);
+    // Taper median divider and guardrail smoothly near roundabout junction
+    const roundaboutFade = Math.min(1.0, Math.max(0.0, (distFromCenter - 4.2) / 3.5));
+
+    const dividerH = maxDividerH * roundaboutFade;
+    const barrierH = maxBarrierH * roundaboutFade;
 
     // Perpendicular vector across road width
     const normX = -tangent.z;
@@ -116,7 +123,6 @@ function buildSnakeRoadGeometry(
 
     // ── 1. Pitch Asphalt Surface (Left Lane & Right Lane) ──
     const rBase = roadVerts.length / 3;
-    // Vertices: [L_out, L_in, R_in, R_out]
     roadVerts.push(
       L_outX, yL_out, L_outZ,
       L_inX, yL_in, L_inZ,
@@ -136,23 +142,16 @@ function buildSnakeRoadGeometry(
     }
 
     // ── 2. Raised Central Median Divider (NON-pitch Concrete) ──
-    // Top of divider sits elevated above road surface
     const yDivL = yL_in + dividerH;
     const yDivR = yR_in + dividerH;
 
     const divBase = dividerVerts.length / 3;
-    // Vertices for Median Cross-section:
-    // 0: Road left bottom (L_inX, yL_in, L_inZ)
-    // 1: Median top left  (L_inX, yDivL, L_inZ)
-    // 2: Median top right (R_inX, yDivR, R_inZ)
-    // 3: Road right bottom(R_inX, yR_in, R_inZ)
     dividerVerts.push(
       L_inX, yL_in, L_inZ,
       L_inX, yDivL, L_inZ,
       R_inX, yDivR, R_inZ,
       R_inX, yR_in, R_inZ
     );
-    // Normals (approximate for top and sides)
     dividerNorms.push(
       normX, 0.4, normZ,
       0, 1, 0,
@@ -164,7 +163,7 @@ function buildSnakeRoadGeometry(
       const d0 = divBase;
       const d1 = divBase + 4;
 
-      // Left curb vertical face (L_in road up to median top)
+      // Left curb vertical face
       dividerIndices.push(d0, d0 + 1, d1);
       dividerIndices.push(d0 + 1, d1 + 1, d1);
 
@@ -172,7 +171,7 @@ function buildSnakeRoadGeometry(
       dividerIndices.push(d0 + 1, d0 + 2, d1 + 1);
       dividerIndices.push(d0 + 2, d1 + 2, d1 + 1);
 
-      // Right curb vertical face (median top down to R_in road)
+      // Right curb vertical face
       dividerIndices.push(d0 + 2, d0 + 3, d1 + 2);
       dividerIndices.push(d0 + 3, d1 + 3, d1 + 2);
     }
@@ -290,7 +289,7 @@ function buildSnakeRoadGeometry(
     }
 
     // ── 7. Street Lamp Placements ──
-    if (i % 16 === 5 && i > 3 && i < curvePoints.length - 4) {
+    if (i % 16 === 5 && distFromCenter > 9.0) {
       const side = (i / 16) % 2 === 0 ? 1 : -1;
       const lampX = pt.x + normX * (outerDist + 1.8) * side;
       const lampZ = pt.z + normZ * (outerDist + 1.8) * side;
