@@ -48,7 +48,7 @@ function buildSnakeRoadGeometry(
   const curve = new THREE.CatmullRomCurve3(points3D, true, 'centripetal', 0.5);
 
   const totalLen = curve.getLength();
-  const numSamples = Math.max(220, Math.floor(totalLen * 2.5));
+  const numSamples = Math.max(260, Math.floor(totalLen * 3.0));
   const curvePoints = curve.getSpacedPoints(numSamples);
 
   // Buffer arrays
@@ -69,8 +69,9 @@ function buildSnakeRoadGeometry(
 
   const halfW = width / 2; // 2.6m half-width for 2-lane road
   const curbW = 0.35;
-  const roadElevation = 0.20; // Elevation of pitch asphalt surface above grass
+  const roadElevation = 0.35; // Elevated high enough above grass terrain to prevent any clipping
   const lineHalfW = 0.08; // 0.16m wide painted lines
+  const WIDTH_STEPS = 4; // 4 sub-strips (5 vertices across width) to hug terrain curves across road
 
   for (let i = 0; i < curvePoints.length; i++) {
     const pt = curvePoints[i];
@@ -81,32 +82,40 @@ function buildSnakeRoadGeometry(
     const normX = -tangent.z;
     const normZ = tangent.x;
 
-    // Pitch Road Left & Right edges
-    const lx = pt.x + normX * halfW;
-    const lz = pt.z + normZ * halfW;
-    const rx = pt.x - normX * halfW;
-    const rz = pt.z - normZ * halfW;
+    // ── 1. Pitch Asphalt Surface (Subdivided across width into 5 vertices) ──
+    const stepBaseIndex = (roadVerts.length / 3);
+    for (let s = 0; s <= WIDTH_STEPS; s++) {
+      const offset = -halfW + (s / WIDTH_STEPS) * (2 * halfW);
+      const vx = pt.x + normX * offset;
+      const vz = pt.z + normZ * offset;
+      const vy = getTerrainHeight(vx, vz) + roadElevation;
 
-    const ly = getTerrainHeight(lx, lz) + roadElevation;
-    const ry = getTerrainHeight(rx, rz) + roadElevation;
-    const cy = getTerrainHeight(pt.x, pt.z) + roadElevation;
-
-    // ── 1. Pitch Asphalt Surface ──
-    const rBase = roadVerts.length / 3;
-    roadVerts.push(lx, ly, lz, rx, ry, rz);
-    roadNorms.push(0, 1, 0, 0, 1, 0);
-
-    if (i < curvePoints.length - 1) {
-      roadIndices.push(rBase, rBase + 1, rBase + 2);
-      roadIndices.push(rBase + 1, rBase + 3, rBase + 2);
+      roadVerts.push(vx, vy, vz);
+      roadNorms.push(0, 1, 0);
     }
 
-    // ── 2. Solid White Center Divider Line (Painted directly on pitch surface down middle) ──
-    const cLineY = cy + 0.025;
+    if (i < curvePoints.length - 1) {
+      const vertsPerStep = WIDTH_STEPS + 1;
+      const rowA = stepBaseIndex;
+      const rowB = stepBaseIndex + vertsPerStep;
+
+      for (let s = 0; s < WIDTH_STEPS; s++) {
+        const v0 = rowA + s;
+        const v1 = rowA + s + 1;
+        const v2 = rowB + s;
+        const v3 = rowB + s + 1;
+
+        roadIndices.push(v0, v1, v2);
+        roadIndices.push(v1, v3, v2);
+      }
+    }
+
+    // ── 2. Solid White Center Divider Line (Painted down middle at +0.03m above asphalt) ──
+    const cy = getTerrainHeight(pt.x, pt.z) + roadElevation + 0.03;
     const cBase = centerVerts.length / 3;
     centerVerts.push(
-      pt.x + normX * lineHalfW, cLineY, pt.z + normZ * lineHalfW,
-      pt.x - normX * lineHalfW, cLineY, pt.z - normZ * lineHalfW
+      pt.x + normX * lineHalfW, cy, pt.z + normZ * lineHalfW,
+      pt.x - normX * lineHalfW, cy, pt.z - normZ * lineHalfW
     );
 
     if (i < curvePoints.length - 1) {
@@ -120,8 +129,8 @@ function buildSnakeRoadGeometry(
     const erx = pt.x - normX * (halfW - 0.3);
     const erz = pt.z - normZ * (halfW - 0.3);
 
-    const ely = getTerrainHeight(elx, elz) + roadElevation + 0.025;
-    const ery = getTerrainHeight(erx, erz) + roadElevation + 0.025;
+    const ely = getTerrainHeight(elx, elz) + roadElevation + 0.03;
+    const ery = getTerrainHeight(erx, erz) + roadElevation + 0.03;
 
     const eBase = edgeVerts.length / 3;
     edgeVerts.push(
@@ -141,13 +150,21 @@ function buildSnakeRoadGeometry(
     }
 
     // ── 4. Outer Concrete Shoulders / Curbs ──
+    const lx = pt.x + normX * halfW;
+    const lz = pt.z + normZ * halfW;
+    const rx = pt.x - normX * halfW;
+    const rz = pt.z - normZ * halfW;
+
+    const ly = getTerrainHeight(lx, lz) + roadElevation;
+    const ry = getTerrainHeight(rx, rz) + roadElevation;
+
     const clx = pt.x + normX * (halfW + curbW);
     const clz = pt.z + normZ * (halfW + curbW);
     const crx = pt.x - normX * (halfW + curbW);
     const crz = pt.z - normZ * (halfW + curbW);
 
-    const cly = getTerrainHeight(clx, clz) + roadElevation + 0.035;
-    const cry = getTerrainHeight(crx, crz) + roadElevation + 0.035;
+    const cly = getTerrainHeight(clx, clz) + roadElevation + 0.04;
+    const cry = getTerrainHeight(crx, crz) + roadElevation + 0.04;
 
     const curbBase = curbVerts.length / 3;
     curbVerts.push(lx, ly, lz, clx, cly, clz, rx, ry, rz, crx, cry, crz);
@@ -270,9 +287,10 @@ export default function OrchardRoads() {
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.20, 0]}>
         <ringGeometry args={[3.5, 9.0, 48]} />
         <meshStandardMaterial
-          color="#1e293b"
-          roughness={0.85}
+          color="#121318"
+          roughness={0.88}
           metalness={0.05}
+          side={THREE.DoubleSide}
           polygonOffset
           polygonOffsetFactor={-4}
           polygonOffsetUnits={-4}
@@ -286,7 +304,7 @@ export default function OrchardRoads() {
       {/* Center Island Outer White Divider Line */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.225, 0]}>
         <ringGeometry args={[3.5, 3.66, 48]} />
-        <meshBasicMaterial color="#ffffff" />
+        <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
       </mesh>
       {/* Roundabout Outer Concrete Curb */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.21, 0]}>
@@ -298,9 +316,10 @@ export default function OrchardRoads() {
       {/* Pitch Asphalt Surface */}
       <mesh receiveShadow geometry={road1.roadGeo}>
         <meshStandardMaterial
-          color="#1e293b"
-          roughness={0.85}
+          color="#121318"
+          roughness={0.88}
           metalness={0.05}
+          side={THREE.DoubleSide}
           polygonOffset
           polygonOffsetFactor={-4}
           polygonOffsetUnits={-4}
@@ -308,24 +327,25 @@ export default function OrchardRoads() {
       </mesh>
       {/* White Center Divider Line (2-Lane Road Divider) */}
       <mesh geometry={road1.centerlineGeo}>
-        <meshBasicMaterial color="#ffffff" />
+        <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
       </mesh>
       {/* White Outer Edge Lines */}
       <mesh geometry={road1.edgelineGeo}>
-        <meshBasicMaterial color="#ffffff" />
+        <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
       </mesh>
       {/* Outer Concrete Curbs */}
       <mesh geometry={road1.curbGeo}>
-        <meshStandardMaterial color="#334155" roughness={0.6} />
+        <meshStandardMaterial color="#334155" roughness={0.6} side={THREE.DoubleSide} />
       </mesh>
 
       {/* ── Snake Road 2 (Continuous Pitch Asphalt 2-Lane Highway) ── */}
       {/* Pitch Asphalt Surface */}
       <mesh receiveShadow geometry={road2.roadGeo}>
         <meshStandardMaterial
-          color="#1e293b"
-          roughness={0.85}
+          color="#121318"
+          roughness={0.88}
           metalness={0.05}
+          side={THREE.DoubleSide}
           polygonOffset
           polygonOffsetFactor={-4}
           polygonOffsetUnits={-4}
@@ -333,15 +353,15 @@ export default function OrchardRoads() {
       </mesh>
       {/* White Center Divider Line (2-Lane Road Divider) */}
       <mesh geometry={road2.centerlineGeo}>
-        <meshBasicMaterial color="#ffffff" />
+        <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
       </mesh>
       {/* White Outer Edge Lines */}
       <mesh geometry={road2.edgelineGeo}>
-        <meshBasicMaterial color="#ffffff" />
+        <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
       </mesh>
       {/* Outer Concrete Curbs */}
       <mesh geometry={road2.curbGeo}>
-        <meshStandardMaterial color="#334155" roughness={0.6} />
+        <meshStandardMaterial color="#334155" roughness={0.6} side={THREE.DoubleSide} />
       </mesh>
 
       {/* ── Street Lamps Along Snake Roads ── */}

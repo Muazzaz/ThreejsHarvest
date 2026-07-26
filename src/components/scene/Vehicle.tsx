@@ -405,8 +405,8 @@ export default function Vehicle({ headlightsIntensity = 8, isNight = false }: Ve
           <mesh position={[0, 0.1, 1.52]}>
             <boxGeometry args={[1.5, 0.03, 0.03]} />
             <meshStandardMaterial
-              color="#4ade80"
-              emissive="#4ade80"
+              color="#ffffff"
+              emissive="#e2e8f0"
               emissiveIntensity={isNight ? 3.5 : 2}
             />
           </mesh>
