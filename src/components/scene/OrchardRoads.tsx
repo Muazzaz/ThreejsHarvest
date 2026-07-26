@@ -69,8 +69,8 @@ function buildSnakeRoadGeometry(
 
   const halfW = width / 2; // 2.6m half-width for 2-lane road
   const curbW = 0.35;
-  const roadElevation = 0.35; // Elevated high enough above grass terrain to prevent any clipping
-  const lineHalfW = 0.08; // 0.16m wide painted lines
+  const roadElevation = 0.06; // Realistic road elevation sitting flush on ground
+  const lineHalfW = 0.08; // 0.16m wide painted line
   const WIDTH_STEPS = 4; // 4 sub-strips (5 vertices across width) to hug terrain curves across road
 
   for (let i = 0; i < curvePoints.length; i++) {
@@ -110,9 +110,8 @@ function buildSnakeRoadGeometry(
       }
     }
 
-    // ── 2. Solid White Center Divider Line (Painted down middle at +0.05m above asphalt) ──
-    const lineHalfW = 0.10; // 0.20m wide crisp white line
-    const cy = getTerrainHeight(pt.x, pt.z) + roadElevation + 0.05;
+    // ── 2. Solid White Center Divider Line (Glued flat to asphalt at +0.003m) ──
+    const cy = getTerrainHeight(pt.x, pt.z) + roadElevation + 0.003;
     const cBase = centerVerts.length / 3;
     centerVerts.push(
       pt.x + normX * lineHalfW, cy, pt.z + normZ * lineHalfW,
@@ -125,23 +124,23 @@ function buildSnakeRoadGeometry(
       const c2 = cBase + 2;
       const c3 = cBase + 3;
 
-      // UP-facing winding order (c0->c2 forward x c0->c1 right = +Y UP)
+      // UP-facing winding order
       centerIndices.push(c0, c2, c1);
       centerIndices.push(c1, c2, c3);
     }
 
-    // ── 3. Solid White Outer Edge Lines ──
-    const el_outX = pt.x + normX * (halfW - 0.35);
-    const el_outZ = pt.z + normZ * (halfW - 0.35);
-    const el_inX  = pt.x + normX * (halfW - 0.15);
-    const el_inZ  = pt.z + normZ * (halfW - 0.15);
+    // ── 3. Solid White Outer Edge Lines (Glued flat to asphalt at +0.003m) ──
+    const el_outX = pt.x + normX * (halfW - 0.30);
+    const el_outZ = pt.z + normZ * (halfW - 0.30);
+    const el_inX  = pt.x + normX * (halfW - 0.14);
+    const el_inZ  = pt.z + normZ * (halfW - 0.14);
 
-    const er_inX  = pt.x - normX * (halfW - 0.15);
-    const er_inZ  = pt.z - normZ * (halfW - 0.15);
-    const er_outX = pt.x - normX * (halfW - 0.35);
-    const er_outZ = pt.z - normZ * (halfW - 0.35);
+    const er_inX  = pt.x - normX * (halfW - 0.14);
+    const er_inZ  = pt.z - normZ * (halfW - 0.14);
+    const er_outX = pt.x - normX * (halfW - 0.30);
+    const er_outZ = pt.z - normZ * (halfW - 0.30);
 
-    const ely = getTerrainHeight(pt.x, pt.z) + roadElevation + 0.05;
+    const ely = getTerrainHeight(pt.x, pt.z) + roadElevation + 0.003;
 
     const eBase = edgeVerts.length / 3;
     edgeVerts.push(
@@ -183,8 +182,8 @@ function buildSnakeRoadGeometry(
     const crx = pt.x - normX * (halfW + curbW);
     const crz = pt.z - normZ * (halfW + curbW);
 
-    const cly = getTerrainHeight(clx, clz) + roadElevation + 0.04;
-    const cry = getTerrainHeight(crx, crz) + roadElevation + 0.04;
+    const cly = getTerrainHeight(clx, clz) + roadElevation + 0.02;
+    const cry = getTerrainHeight(crx, crz) + roadElevation + 0.02;
 
     const curbBase = curbVerts.length / 3;
     curbVerts.push(lx, ly, lz, clx, cly, clz, rx, ry, rz, crx, cry, crz);
@@ -312,8 +311,8 @@ export default function OrchardRoads() {
           metalness={0.05}
           side={THREE.DoubleSide}
           polygonOffset
-          polygonOffsetFactor={-4}
-          polygonOffsetUnits={-4}
+          polygonOffsetFactor={-2}
+          polygonOffsetUnits={-2}
         />
       </mesh>
       {/* Roundabout Center Grass Island Curb */}
@@ -322,9 +321,15 @@ export default function OrchardRoads() {
         <meshStandardMaterial color="#334155" roughness={0.6} />
       </mesh>
       {/* Center Island Outer White Divider Line */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.225, 0]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.205, 0]}>
         <ringGeometry args={[3.5, 3.66, 48]} />
-        <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
+        <meshBasicMaterial
+          color="#ffffff"
+          side={THREE.DoubleSide}
+          polygonOffset
+          polygonOffsetFactor={-6}
+          polygonOffsetUnits={-6}
+        />
       </mesh>
       {/* Roundabout Outer Concrete Curb */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.21, 0]}>
@@ -341,8 +346,8 @@ export default function OrchardRoads() {
           metalness={0.05}
           side={THREE.DoubleSide}
           polygonOffset
-          polygonOffsetFactor={-4}
-          polygonOffsetUnits={-4}
+          polygonOffsetFactor={-2}
+          polygonOffsetUnits={-2}
         />
       </mesh>
       {/* White Center Divider Line (2-Lane Road Divider) */}
@@ -351,8 +356,8 @@ export default function OrchardRoads() {
           color="#ffffff"
           side={THREE.DoubleSide}
           polygonOffset
-          polygonOffsetFactor={-20}
-          polygonOffsetUnits={-20}
+          polygonOffsetFactor={-6}
+          polygonOffsetUnits={-6}
         />
       </mesh>
       {/* White Outer Edge Lines */}
@@ -361,8 +366,8 @@ export default function OrchardRoads() {
           color="#ffffff"
           side={THREE.DoubleSide}
           polygonOffset
-          polygonOffsetFactor={-20}
-          polygonOffsetUnits={-20}
+          polygonOffsetFactor={-6}
+          polygonOffsetUnits={-6}
         />
       </mesh>
       {/* Outer Concrete Curbs */}
@@ -379,8 +384,8 @@ export default function OrchardRoads() {
           metalness={0.05}
           side={THREE.DoubleSide}
           polygonOffset
-          polygonOffsetFactor={-4}
-          polygonOffsetUnits={-4}
+          polygonOffsetFactor={-2}
+          polygonOffsetUnits={-2}
         />
       </mesh>
       {/* White Center Divider Line (2-Lane Road Divider) */}
@@ -389,8 +394,8 @@ export default function OrchardRoads() {
           color="#ffffff"
           side={THREE.DoubleSide}
           polygonOffset
-          polygonOffsetFactor={-20}
-          polygonOffsetUnits={-20}
+          polygonOffsetFactor={-6}
+          polygonOffsetUnits={-6}
         />
       </mesh>
       {/* White Outer Edge Lines */}
@@ -399,8 +404,8 @@ export default function OrchardRoads() {
           color="#ffffff"
           side={THREE.DoubleSide}
           polygonOffset
-          polygonOffsetFactor={-20}
-          polygonOffsetUnits={-20}
+          polygonOffsetFactor={-6}
+          polygonOffsetUnits={-6}
         />
       </mesh>
       {/* Outer Concrete Curbs */}
