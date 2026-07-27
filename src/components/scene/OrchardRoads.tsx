@@ -198,8 +198,8 @@ function buildSnakeRoadGeometry(
 
     // ── 5. Street Lamp Placements ──
     const distFromCenter = Math.sqrt(pt.x * pt.x + pt.z * pt.z);
-    if (i % 18 === 6 && distFromCenter > 10.0) {
-      const side = (i / 18) % 2 === 0 ? 1 : -1;
+    if (i % 52 === 12 && distFromCenter > 15.0) {
+      const side = (i / 52) % 2 === 0 ? 1 : -1;
       const lampX = pt.x + normX * (halfW + 1.8) * side;
       const lampZ = pt.z + normZ * (halfW + 1.8) * side;
       const rotY = Math.atan2(tangent.x, tangent.z) + (side > 0 ? Math.PI / 2 : -Math.PI / 2);
@@ -270,7 +270,7 @@ export function StreetLamp({ x, z, rotationY = 0 }: { x: number; z: number; rota
         <meshStandardMaterial
           color="#ffffff"
           emissive={isNight ? '#fef08a' : '#64748b'}
-          emissiveIntensity={isNight ? 6 : 0.2}
+          emissiveIntensity={isNight ? 2.5 : 0.2}
         />
       </mesh>
 
@@ -280,14 +280,14 @@ export function StreetLamp({ x, z, rotationY = 0 }: { x: number; z: number; rota
           <pointLight
             position={[0.9, 4.2, 0]}
             color="#fef08a"
-            intensity={7.5}
-            distance={22}
-            decay={1.7}
+            intensity={3.0}
+            distance={12}
+            decay={2.0}
           />
           {/* Soft ground illumination pool */}
           <mesh position={[0.9, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <circleGeometry args={[5.5, 24]} />
-            <meshBasicMaterial color="#fef08a" transparent opacity={0.16} />
+            <circleGeometry args={[3.5, 24]} />
+            <meshBasicMaterial color="#fef08a" transparent opacity={0.08} />
           </mesh>
         </>
       )}
