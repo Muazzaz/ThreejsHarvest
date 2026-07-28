@@ -306,25 +306,13 @@ export function StreetLamp({ x, z, rotationY = 0 }: { x: number; z: number; rota
 
       {/* Street Light Illumination */}
       {isNight && (
-        <>
-          <pointLight
-            position={[1.053, 4.7, 0]}
-            color="#ffedd5"
-            intensity={5.0}
-            distance={20}
-            decay={2.0}
-          />
-          {/* Outer Soft ground illumination pool */}
-          <mesh position={[1.053, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <circleGeometry args={[5.5, 32]} />
-            <meshBasicMaterial color="#ffedd5" transparent opacity={0.12} />
-          </mesh>
-          {/* Inner Bright ground illumination pool */}
-          <mesh position={[1.053, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <circleGeometry args={[2.5, 32]} />
-            <meshBasicMaterial color="#ffffff" transparent opacity={0.15} />
-          </mesh>
-        </>
+        <pointLight
+          position={[1.053, 4.7, 0]}
+          color="#ffedd5"
+          intensity={25.0}
+          distance={60}
+          decay={1.8}
+        />
       )}
     </group>
   );
