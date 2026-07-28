@@ -240,36 +240,66 @@ export function StreetLamp({ x, z, rotationY = 0 }: { x: number; z: number; rota
 
   return (
     <group position={[x, groundY, z]} rotation={[0, rotationY, 0]}>
-      {/* Base flange */}
+      {/* Base Tier 1 */}
       <mesh position={[0, 0.1, 0]}>
-        <cylinderGeometry args={[0.3, 0.4, 0.2, 8]} />
+        <cylinderGeometry args={[0.25, 0.35, 0.2, 16]} />
+        <meshStandardMaterial color="#1e293b" metalness={0.8} roughness={0.3} />
+      </mesh>
+      
+      {/* Base Tier 2 */}
+      <mesh position={[0, 0.4, 0]}>
+        <cylinderGeometry args={[0.15, 0.22, 0.4, 16]} />
         <meshStandardMaterial color="#0f172a" metalness={0.8} roughness={0.3} />
       </mesh>
 
       {/* Main vertical post */}
-      <mesh position={[0, 2.3, 0]}>
-        <cylinderGeometry args={[0.1, 0.15, 4.6, 10]} />
+      <mesh position={[0, 2.6, 0]}>
+        <cylinderGeometry args={[0.08, 0.15, 4.0, 16]} />
         <meshStandardMaterial color="#1e293b" metalness={0.85} roughness={0.2} />
       </mesh>
 
-      {/* Curved arm */}
-      <mesh position={[0.5, 4.5, 0]} rotation={[0, 0, -Math.PI / 4]}>
-        <cylinderGeometry args={[0.07, 0.07, 1.1, 8]} />
+      {/* Post Top Cap */}
+      <mesh position={[0, 4.6, 0]}>
+        <sphereGeometry args={[0.08, 16, 16]} />
+        <meshStandardMaterial color="#0f172a" metalness={0.9} roughness={0.2} />
+      </mesh>
+
+      {/* Diagonal arm */}
+      <mesh position={[0.176, 4.776, 0]} rotation={[0, 0, -Math.PI / 4]}>
+        <cylinderGeometry args={[0.06, 0.08, 0.5, 12]} />
         <meshStandardMaterial color="#1e293b" metalness={0.85} roughness={0.2} />
       </mesh>
 
-      {/* Lamp Head Fixture */}
-      <mesh position={[0.9, 4.6, 0]}>
-        <boxGeometry args={[0.55, 0.16, 0.35]} />
+      {/* Joint */}
+      <mesh position={[0.353, 4.953, 0]}>
+        <sphereGeometry args={[0.07, 16, 16]} />
+        <meshStandardMaterial color="#0f172a" metalness={0.9} roughness={0.2} />
+      </mesh>
+
+      {/* Horizontal arm */}
+      <mesh position={[0.853, 4.953, 0]} rotation={[0, 0, -Math.PI / 2]}>
+        <cylinderGeometry args={[0.04, 0.06, 1.0, 12]} />
+        <meshStandardMaterial color="#1e293b" metalness={0.85} roughness={0.2} />
+      </mesh>
+
+      {/* Lamp Head Fixture - Sleek & Modern */}
+      <mesh position={[1.053, 4.953, 0]}>
+        <boxGeometry args={[0.7, 0.08, 0.3]} />
         <meshStandardMaterial color="#020617" metalness={0.9} roughness={0.15} />
+      </mesh>
+      
+      {/* Lamp Head Top Ridge */}
+      <mesh position={[1.053, 5.013, 0]}>
+        <boxGeometry args={[0.5, 0.04, 0.15]} />
+        <meshStandardMaterial color="#334155" metalness={0.9} roughness={0.2} />
       </mesh>
 
       {/* Emissive Lamp Glass */}
-      <mesh position={[0.9, 4.51, 0]}>
-        <boxGeometry args={[0.45, 0.04, 0.28]} />
+      <mesh position={[1.053, 4.903, 0]}>
+        <boxGeometry args={[0.6, 0.02, 0.2]} />
         <meshStandardMaterial
           color="#ffffff"
-          emissive={isNight ? '#fef08a' : '#64748b'}
+          emissive={isNight ? '#ffedd5' : '#64748b'}
           emissiveIntensity={isNight ? 2.5 : 0.2}
         />
       </mesh>
@@ -278,16 +308,21 @@ export function StreetLamp({ x, z, rotationY = 0 }: { x: number; z: number; rota
       {isNight && (
         <>
           <pointLight
-            position={[0.9, 4.2, 0]}
-            color="#fef08a"
-            intensity={3.0}
-            distance={12}
+            position={[1.053, 4.7, 0]}
+            color="#ffedd5"
+            intensity={5.0}
+            distance={20}
             decay={2.0}
           />
-          {/* Soft ground illumination pool */}
-          <mesh position={[0.9, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <circleGeometry args={[3.5, 24]} />
-            <meshBasicMaterial color="#fef08a" transparent opacity={0.08} />
+          {/* Outer Soft ground illumination pool */}
+          <mesh position={[1.053, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[5.5, 32]} />
+            <meshBasicMaterial color="#ffedd5" transparent opacity={0.12} />
+          </mesh>
+          {/* Inner Bright ground illumination pool */}
+          <mesh position={[1.053, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[2.5, 32]} />
+            <meshBasicMaterial color="#ffffff" transparent opacity={0.15} />
           </mesh>
         </>
       )}
