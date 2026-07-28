@@ -343,17 +343,7 @@ export default function OrchardRoads() {
         <ringGeometry args={[3.2, 3.5, 48]} />
         <meshStandardMaterial color="#334155" roughness={0.6} />
       </mesh>
-      {/* Center Island Outer White Divider Line */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.205, 0]}>
-        <ringGeometry args={[3.5, 3.66, 48]} />
-        <meshBasicMaterial
-          color="#ffffff"
-          side={THREE.DoubleSide}
-          polygonOffset
-          polygonOffsetFactor={-6}
-          polygonOffsetUnits={-6}
-        />
-      </mesh>
+
       {/* Roundabout Outer Concrete Curb */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.21, 0]}>
         <ringGeometry args={[8.9, 9.4, 48]} />
@@ -373,26 +363,7 @@ export default function OrchardRoads() {
           polygonOffsetUnits={-2}
         />
       </mesh>
-      {/* White Center Divider Line (2-Lane Road Divider) */}
-      <mesh geometry={road1.centerlineGeo}>
-        <meshBasicMaterial
-          color="#ffffff"
-          side={THREE.DoubleSide}
-          polygonOffset
-          polygonOffsetFactor={-6}
-          polygonOffsetUnits={-6}
-        />
-      </mesh>
-      {/* White Outer Edge Lines */}
-      <mesh geometry={road1.edgelineGeo}>
-        <meshBasicMaterial
-          color="#ffffff"
-          side={THREE.DoubleSide}
-          polygonOffset
-          polygonOffsetFactor={-6}
-          polygonOffsetUnits={-6}
-        />
-      </mesh>
+
       {/* Outer Concrete Curbs */}
       <mesh geometry={road1.curbGeo}>
         <meshStandardMaterial color="#334155" roughness={0.6} side={THREE.DoubleSide} />
@@ -411,26 +382,7 @@ export default function OrchardRoads() {
           polygonOffsetUnits={-2}
         />
       </mesh>
-      {/* White Center Divider Line (2-Lane Road Divider) */}
-      <mesh geometry={road2.centerlineGeo}>
-        <meshBasicMaterial
-          color="#ffffff"
-          side={THREE.DoubleSide}
-          polygonOffset
-          polygonOffsetFactor={-6}
-          polygonOffsetUnits={-6}
-        />
-      </mesh>
-      {/* White Outer Edge Lines */}
-      <mesh geometry={road2.edgelineGeo}>
-        <meshBasicMaterial
-          color="#ffffff"
-          side={THREE.DoubleSide}
-          polygonOffset
-          polygonOffsetFactor={-6}
-          polygonOffsetUnits={-6}
-        />
-      </mesh>
+
       {/* Outer Concrete Curbs */}
       <mesh geometry={road2.curbGeo}>
         <meshStandardMaterial color="#334155" roughness={0.6} side={THREE.DoubleSide} />
