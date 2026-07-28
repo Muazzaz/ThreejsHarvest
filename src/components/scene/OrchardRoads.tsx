@@ -202,7 +202,7 @@ function buildSnakeRoadGeometry(
       const side = (i / 52) % 2 === 0 ? 1 : -1;
       const lampX = pt.x + normX * (halfW + 1.8) * side;
       const lampZ = pt.z + normZ * (halfW + 1.8) * side;
-      const rotY = Math.atan2(tangent.x, tangent.z) + (side > 0 ? Math.PI / 2 : -Math.PI / 2);
+      const rotY = Math.atan2(tangent.x, tangent.z) + (side > 0 ? 0 : Math.PI);
       lampPositions.push({ x: lampX, z: lampZ, rotY });
     }
   }
