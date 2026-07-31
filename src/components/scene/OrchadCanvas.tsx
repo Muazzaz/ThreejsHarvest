@@ -73,10 +73,25 @@ export default function OrchadCanvas() {
   const [timeConfig, setTimeConfig] = useState(() => getTimeConfig(timeMode));
 
   useEffect(() => {
-    const update = () => setTimeConfig(getTimeConfig(timeMode));
-    update();
-    const interval = setInterval(update, 5000);
-    return () => clearInterval(interval);
+    setTimeConfig(getTimeConfig(timeMode));
+    
+    // Only set an interval if we are in auto mode (to catch hour changes)
+    let interval: ReturnType<typeof setInterval> | undefined;
+    if (timeMode === 'auto') {
+      // Check every minute instead of every 5 seconds, and only update if the phase actually changed
+      interval = setInterval(() => {
+        setTimeConfig((prev) => {
+          const next = getTimeConfig('auto');
+          // Only trigger a re-render if the major phase changed (e.g. day -> sunset)
+          // We don't care about formattedTime in the Canvas
+          if (prev.resolvedPhase !== next.resolvedPhase) return next;
+          return prev;
+        });
+      }, 60000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [timeMode]);
 
   return (

@@ -13,9 +13,17 @@ export default function HUD() {
   const [showTimeMenu, setShowTimeMenu] = useState(false);
 
   useEffect(() => {
-    const update = () => setTimeConfig(getTimeConfig(timeMode));
-    update();
-    const interval = setInterval(update, 5000);
+    setTimeConfig(getTimeConfig(timeMode));
+    const interval = setInterval(() => {
+      setTimeConfig((prev) => {
+        const next = getTimeConfig(timeMode);
+        // Only trigger a React re-render if the time string or phase actually changed
+        if (prev.formattedTime !== next.formattedTime || prev.resolvedPhase !== next.resolvedPhase) {
+          return next;
+        }
+        return prev;
+      });
+    }, 5000);
     return () => clearInterval(interval);
   }, [timeMode]);
 

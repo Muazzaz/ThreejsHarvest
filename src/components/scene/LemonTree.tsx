@@ -2,6 +2,7 @@
 import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
+import { Instances, Instance } from '@react-three/drei';
 import {
   seededRandom,
   getBarkTexture,
@@ -20,127 +21,135 @@ import {
 
 const BARK_COLOR = '#5a4a2a';
 
-/** Glossy narrow citrus leaf cluster at branch tip */
-function LemonLeafCluster({ position, size = 1.0 }: { position: Vec3; size?: number }) {
-  const leafTex = getLeafTexture('#1a5a18', 'rgba(140, 220, 100, 0.3)', '#2a7a28', 'narrow');
-  const leaves = useMemo(() => {
-    const rng = seededRandom(
-      Math.floor(position[0] * 1000 + position[1] * 100 + position[2] * 10),
-    );
-    const count = 7 + Math.floor(rng() * 5);
-    const arr: { pos: Vec3; rot: [number, number, number]; scale: number }[] = [];
-    for (let i = 0; i < count; i++) {
-      const angle = rng() * Math.PI * 2;
-      const tilt = rng() * 0.4 - 0.2;
-      const spread = 0.06 + rng() * 0.16 * size;
-      arr.push({
-        pos: [
-          Math.cos(angle) * spread,
-          (rng() - 0.35) * 0.14 * size,
-          Math.sin(angle) * spread,
-        ],
-        rot: [tilt, angle + rng() * 0.5, rng() * 0.25],
-        scale: (0.18 + rng() * 0.14) * size,
-      });
-    }
-    return arr;
-  }, [position, size]);
+/** Aggregated Leaf clusters */
+function LemonLeafClusters({ positions }: { positions: Vec3[] }) {
+  const leafTex = getLeafTexture('#2a5c1a', 'rgba(150, 220, 150, 0.25)', '#3a7a2a', 'oval');
+  
+  const allLeaves = useMemo(() => {
+    const leaves: { pos: Vec3; rot: [number, number, number]; scale: number }[] = [];
+    positions.forEach((pos, index) => {
+      const rng = seededRandom(Math.floor(pos[0] * 1000 + pos[1] * 100 + pos[2] * 10));
+      const size = 0.7 + (index % 4) * 0.12;
+      const count = 5 + Math.floor(rng() * 4);
+      
+      for (let i = 0; i < count; i++) {
+        const angle = rng() * Math.PI * 2;
+        const tilt = rng() * 0.5 - 0.1;
+        const spread = 0.05 + rng() * 0.12 * size;
+        leaves.push({
+          pos: [
+            pos[0] + Math.cos(angle) * spread,
+            pos[1] + (rng() - 0.4) * 0.12 * size,
+            pos[2] + Math.sin(angle) * spread,
+          ],
+          rot: [tilt, angle + rng() * 0.6, rng() * 0.2],
+          scale: (0.18 + rng() * 0.12) * size,
+        });
+      }
+    });
+    return leaves;
+  }, [positions]);
+
+  if (allLeaves.length === 0) return null;
 
   return (
-    <group position={position}>
-      {leaves.map((leaf, i) => (
-        <mesh key={i} position={leaf.pos} rotation={leaf.rot} scale={leaf.scale}>
-          <planeGeometry args={[0.3, 0.6]} />
-          <meshStandardMaterial
-            map={leafTex}
-            color="#2a7a22"
-            roughness={0.35}
-            metalness={0.06}
-            side={THREE.DoubleSide}
-            transparent
-            alphaTest={0.3}
-          />
-        </mesh>
+    <Instances range={allLeaves.length} limit={allLeaves.length}>
+      <planeGeometry args={[0.3, 0.6]} />
+      <meshStandardMaterial
+        map={leafTex}
+        color="#3a7a2a"
+        roughness={0.4}
+        metalness={0.05}
+        side={THREE.DoubleSide}
+        transparent
+        alphaTest={0.3}
+      />
+      {allLeaves.map((leaf, i) => (
+        <Instance key={i} position={leaf.pos} rotation={leaf.rot} scale={leaf.scale} />
       ))}
-    </group>
+    </Instances>
   );
 }
 
-/** Renders connected branch segments */
+/** Renders connected branch segments using Instances */
 function BranchRenderer({ branches }: { branches: BranchSegment[] }) {
   const barkTex = getBarkTexture(BARK_COLOR);
   const barkNorm = getBarkNormal();
 
-  const transforms = useMemo(() => {
-    return branches.map((b) => computeCylinderTransform(b.start, b.end));
+  const instancedData = useMemo(() => {
+    return branches.map((b) => {
+      const t = computeCylinderTransform(b.start, b.end);
+      const avgRadius = (b.radiusStart + b.radiusEnd) / 2;
+      return {
+        pos: t.position,
+        rot: t.quaternion,
+        scale: [avgRadius, t.length, avgRadius] as [number, number, number],
+      };
+    });
   }, [branches]);
 
+  if (instancedData.length === 0) return null;
+
   return (
-    <group>
-      {branches.map((b, i) => {
-        const t = transforms[i];
-        return (
-          <mesh key={i} position={t.position} quaternion={t.quaternion}>
-            <cylinderGeometry args={[b.radiusEnd, b.radiusStart, t.length, 6]} />
-            <meshStandardMaterial
-              map={barkTex}
-              normalMap={barkNorm}
-              color={BARK_COLOR}
-              roughness={0.92}
-              metalness={0.0}
-            />
-          </mesh>
-        );
-      })}
-    </group>
+    <Instances range={instancedData.length} limit={instancedData.length}>
+      <cylinderGeometry args={[1, 1, 1, 6]} />
+      <meshStandardMaterial map={barkTex} normalMap={barkNorm} color={BARK_COLOR} roughness={0.92} metalness={0.0} />
+      {instancedData.map((d, i) => (
+        <Instance key={i} position={d.pos} quaternion={d.rot} scale={d.scale} />
+      ))}
+    </Instances>
   );
 }
 
 /** White 5-petaled citrus flowers at some branch tips */
 function LemonFlowers({ positions, seed }: { positions: Vec3[]; seed: number }) {
-  const flowers = useMemo(() => {
+  const { petals, centers } = useMemo(() => {
+    const p: { pos: Vec3; rot: [number, number, number]; scale: number }[] = [];
+    const c: { pos: Vec3; scale: number }[] = [];
     const rng = seededRandom(seed + 250);
-    // Only some positions get flowers
-    return positions.filter(() => rng() > 0.55).map((pos) => ({
-      pos,
-      scale: 0.022 + rng() * 0.012,
-    }));
+    
+    positions.forEach((pos) => {
+      if (rng() > 0.55) {
+        const scale = 0.022 + rng() * 0.012;
+        c.push({ pos, scale: scale * 0.4 });
+        
+        for (let pi = 0; pi < 5; pi++) {
+          const pAngle = (pi / 5) * Math.PI * 2;
+          p.push({
+            pos: [
+              pos[0] + Math.cos(pAngle) * scale * 0.7,
+              pos[1],
+              pos[2] + Math.sin(pAngle) * scale * 0.7,
+            ],
+            rot: [0.3, pAngle, 0],
+            scale,
+          });
+        }
+      }
+    });
+    return { petals: p, centers: c };
   }, [positions, seed]);
 
   return (
     <group>
-      {flowers.map((flower, i) => (
-        <group key={i} position={flower.pos}>
-          {Array.from({ length: 5 }, (_, pi) => {
-            const pAngle = (pi / 5) * Math.PI * 2;
-            return (
-              <mesh
-                key={pi}
-                position={[
-                  Math.cos(pAngle) * flower.scale * 0.7,
-                  0,
-                  Math.sin(pAngle) * flower.scale * 0.7,
-                ]}
-                rotation={[0.3, pAngle, 0]}
-                scale={flower.scale}
-              >
-                <planeGeometry args={[0.8, 1.2]} />
-                <meshStandardMaterial
-                  color="#fffde8"
-                  roughness={0.4}
-                  side={THREE.DoubleSide}
-                  transparent
-                  opacity={0.9}
-                />
-              </mesh>
-            );
-          })}
-          <mesh scale={flower.scale * 0.4}>
-            <sphereGeometry args={[1, 6, 4]} />
-            <meshStandardMaterial color="#e8c820" roughness={0.5} />
-          </mesh>
-        </group>
-      ))}
+      {petals.length > 0 && (
+        <Instances range={petals.length} limit={petals.length}>
+          <planeGeometry args={[0.8, 1.2]} />
+          <meshStandardMaterial color="#fffde8" roughness={0.4} side={THREE.DoubleSide} transparent opacity={0.9} />
+          {petals.map((p, i) => (
+            <Instance key={i} position={p.pos} rotation={p.rot} scale={p.scale} />
+          ))}
+        </Instances>
+      )}
+      {centers.length > 0 && (
+        <Instances range={centers.length} limit={centers.length}>
+          <sphereGeometry args={[1, 6, 4]} />
+          <meshStandardMaterial color="#e8c820" roughness={0.5} />
+          {centers.map((c, i) => (
+            <Instance key={i} position={c.pos} scale={c.scale} />
+          ))}
+        </Instances>
+      )}
     </group>
   );
 }
@@ -158,51 +167,47 @@ function LemonFruits({ fruitPositions, seed = 0 }: {
     }
   });
 
-  const fruits = useMemo(() => {
+  const { fruits } = useMemo(() => {
     const rng = seededRandom(seed + 450);
-    return fruitPositions.map((pos) => ({
-      pos: [pos[0], pos[1] - 0.08 - rng() * 0.1, pos[2]] as Vec3,
-      rot: [rng() * 0.3 - 0.15, rng() * Math.PI * 2, rng() * 0.3] as [number, number, number],
-      scaleX: 0.055 + rng() * 0.02,
-      scaleY: 0.075 + rng() * 0.025,
-      ripeness: rng(),
-    }));
+    const fArr: any[] = [];
+    
+    fruitPositions.forEach((pos) => {
+      const r = rng();
+      const color = new THREE.Color();
+      if (r < 0.5) {
+        color.lerpColors(new THREE.Color('#4a8a2a'), new THREE.Color('#b4c830'), r * 2);
+      } else {
+        color.lerpColors(new THREE.Color('#b4c830'), new THREE.Color('#fde047'), (r - 0.5) * 2);
+      }
+      
+      const p: Vec3 = [pos[0], pos[1] - 0.08 - rng() * 0.1, pos[2]];
+      const rot: [number, number, number] = [rng() * 0.3 - 0.15, rng() * Math.PI * 2, rng() * 0.3];
+      const scaleX = 0.055 + rng() * 0.02;
+      const scaleY = 0.075 + rng() * 0.025;
+      
+      fArr.push({ pos: p, rot, scale: [scaleX, scaleY, scaleX], color });
+    });
+    return { fruits: fArr };
   }, [fruitPositions, seed]);
 
   return (
     <group ref={groupRef}>
-      {fruits.map((fruit, i) => {
-        const r = fruit.ripeness;
-        const color = new THREE.Color();
-        if (r < 0.5) {
-          color.lerpColors(new THREE.Color('#4a8a2a'), new THREE.Color('#b4c830'), r * 2);
-        } else {
-          color.lerpColors(new THREE.Color('#b4c830'), new THREE.Color('#fde047'), (r - 0.5) * 2);
-        }
-
-        return (
-          <group key={i} position={fruit.pos} rotation={fruit.rot}>
-            {/* Lemon body */}
-            <mesh scale={[fruit.scaleX, fruit.scaleY, fruit.scaleX]}>
-              <sphereGeometry args={[1, 10, 8]} />
-              <meshStandardMaterial color={color} roughness={0.4} metalness={0.02} />
-            </mesh>
-            {/* Nipple tip */}
-            <mesh
-              position={[0, -fruit.scaleY * 0.85, 0]}
-              scale={[fruit.scaleX * 0.35, fruit.scaleY * 0.25, fruit.scaleX * 0.35]}
-            >
-              <sphereGeometry args={[1, 6, 4]} />
-              <meshStandardMaterial color={color} roughness={0.45} />
-            </mesh>
-            {/* Stem connecting to branch */}
-            <mesh position={[0, fruit.scaleY * 0.9, 0]}>
-              <cylinderGeometry args={[0.005, 0.008, 0.06, 4]} />
-              <meshStandardMaterial color="#5a6a30" roughness={0.9} />
-            </mesh>
-          </group>
-        );
-      })}
+      {fruits.map((fruit, i) => (
+        <group key={i} position={fruit.pos} rotation={fruit.rot}>
+          <mesh scale={fruit.scale as any}>
+            <sphereGeometry args={[1, 10, 8]} />
+            <meshStandardMaterial color={fruit.color} roughness={0.4} metalness={0.02} />
+          </mesh>
+          <mesh position={[0, -fruit.scale[1] * 0.85, 0]} scale={[fruit.scale[0] * 0.35, fruit.scale[1] * 0.25, fruit.scale[0] * 0.35]}>
+            <sphereGeometry args={[1, 6, 4]} />
+            <meshStandardMaterial color={fruit.color} roughness={0.45} />
+          </mesh>
+          <mesh position={[0, fruit.scale[1] * 0.9, 0]}>
+            <cylinderGeometry args={[0.005, 0.008, 0.06, 4]} />
+            <meshStandardMaterial color="#5a6a30" roughness={0.9} />
+          </mesh>
+        </group>
+      ))}
     </group>
   );
 }
@@ -221,21 +226,26 @@ function LemonRoots({ seed = 0 }: { seed?: number }) {
       const thickness = 0.04 + rng() * 0.025;
       const start: Vec3 = [0, 0.04, 0];
       const end: Vec3 = [Math.cos(angle) * length, -0.03, Math.sin(angle) * length];
-      const transform = computeCylinderTransform(start, end);
-      arr.push({ ...transform, thickness });
+      const t = computeCylinderTransform(start, end);
+      arr.push({
+        pos: t.position,
+        rot: t.quaternion,
+        scale: [thickness * 0.3, t.length, thickness] as [number, number, number]
+      });
     }
     return arr;
   }, [seed]);
 
+  if (rootTransforms.length === 0) return null;
+
   return (
-    <group>
+    <Instances range={rootTransforms.length} limit={rootTransforms.length}>
+      <cylinderGeometry args={[1, 1, 1, 5]} />
+      <meshStandardMaterial map={barkTex} color="#4a3a1a" roughness={0.98} />
       {rootTransforms.map((rt, i) => (
-        <mesh key={i} position={rt.position} quaternion={rt.quaternion}>
-          <cylinderGeometry args={[rt.thickness * 0.3, rt.thickness, rt.length, 5]} />
-          <meshStandardMaterial map={barkTex} color="#4a3a1a" roughness={0.98} />
-        </mesh>
+        <Instance key={i} position={rt.pos} quaternion={rt.rot} scale={rt.scale} />
       ))}
-    </group>
+    </Instances>
   );
 }
 
@@ -321,13 +331,12 @@ export default function LemonTree({ x, z, groundY = 0 }: LemonTreeProps) {
 
       {/* ── Connected branches + leaves + flowers + fruits ── */}
       <group ref={canopyRef}>
+        {/* Connected branch segments */}
         <BranchRenderer branches={treeData.branches} />
 
-        {/* Leaf clusters at branch tips */}
-        {treeData.leafTipPositions.map((pos, i) => (
-          <LemonLeafCluster key={i} position={pos} size={0.55 + (i % 3) * 0.12} />
-        ))}
-
+        {/* Aggregated Leaf Clusters */}
+        <LemonLeafClusters positions={treeData.leafTipPositions} />
+        
         {/* Flowers at some leaf positions */}
         <LemonFlowers positions={treeData.leafTipPositions} seed={seed} />
 

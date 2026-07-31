@@ -2,6 +2,7 @@
 import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
+import { Instances, Instance } from '@react-three/drei';
 import {
   seededRandom,
   getBarkTexture,
@@ -20,79 +21,83 @@ import {
 
 const BARK_COLOR = '#4a3520';
 
-/** Small oval leaf cluster at a branch tip */
-function JujubeLeafCluster({ position, size = 1.0 }: { position: Vec3; size?: number }) {
-  const leafTex = getLeafTexture('#1a5520', 'rgba(90, 180, 90, 0.2)', '#2a7030', 'oval');
-  const leaves = useMemo(() => {
-    const rng = seededRandom(
-      Math.floor(position[0] * 1000 + position[1] * 100 + position[2] * 10),
-    );
-    const count = 7 + Math.floor(rng() * 5);
-    const arr: { pos: Vec3; rot: [number, number, number]; scale: number }[] = [];
-    for (let i = 0; i < count; i++) {
-      const angle = rng() * Math.PI * 2;
-      const tilt = rng() * 0.6 - 0.3;
-      const spread = 0.06 + rng() * 0.14 * size;
-      arr.push({
-        pos: [
-          Math.cos(angle) * spread,
-          (rng() - 0.35) * 0.12 * size,
-          Math.sin(angle) * spread,
-        ],
-        rot: [tilt, angle + rng() * 0.5, rng() * 0.4],
-        scale: (0.14 + rng() * 0.1) * size,
-      });
-    }
-    return arr;
-  }, [position, size]);
+/** Aggregated Leaf clusters */
+function JujubeLeafClusters({ positions }: { positions: Vec3[] }) {
+  const leafTex = getLeafTexture('#2a5c1a', 'rgba(150, 220, 150, 0.25)', '#3a7a2a', 'oval');
+  
+  const allLeaves = useMemo(() => {
+    const leaves: { pos: Vec3; rot: [number, number, number]; scale: number }[] = [];
+    positions.forEach((pos, index) => {
+      const rng = seededRandom(Math.floor(pos[0] * 1000 + pos[1] * 100 + pos[2] * 10));
+      const size = 0.7 + (index % 4) * 0.12;
+      const count = 5 + Math.floor(rng() * 4);
+      
+      for (let i = 0; i < count; i++) {
+        const angle = rng() * Math.PI * 2;
+        const tilt = rng() * 0.5 - 0.1;
+        const spread = 0.05 + rng() * 0.12 * size;
+        leaves.push({
+          pos: [
+            pos[0] + Math.cos(angle) * spread,
+            pos[1] + (rng() - 0.4) * 0.12 * size,
+            pos[2] + Math.sin(angle) * spread,
+          ],
+          rot: [tilt, angle + rng() * 0.6, rng() * 0.2],
+          scale: (0.18 + rng() * 0.12) * size,
+        });
+      }
+    });
+    return leaves;
+  }, [positions]);
+
+  if (allLeaves.length === 0) return null;
 
   return (
-    <group position={position}>
-      {leaves.map((leaf, i) => (
-        <mesh key={i} position={leaf.pos} rotation={leaf.rot} scale={leaf.scale}>
-          <planeGeometry args={[0.35, 0.5]} />
-          <meshStandardMaterial
-            map={leafTex}
-            color="#1e6620"
-            roughness={0.55}
-            metalness={0.03}
-            side={THREE.DoubleSide}
-            transparent
-            alphaTest={0.3}
-          />
-        </mesh>
+    <Instances range={allLeaves.length} limit={allLeaves.length}>
+      <planeGeometry args={[0.3, 0.6]} />
+      <meshStandardMaterial
+        map={leafTex}
+        color="#3a7a2a"
+        roughness={0.4}
+        metalness={0.05}
+        side={THREE.DoubleSide}
+        transparent
+        alphaTest={0.3}
+      />
+      {allLeaves.map((leaf, i) => (
+        <Instance key={i} position={leaf.pos} rotation={leaf.rot} scale={leaf.scale} />
       ))}
-    </group>
+    </Instances>
   );
 }
 
-/** Renders connected branch segments */
+/** Renders connected branch segments using Instances */
 function BranchRenderer({ branches }: { branches: BranchSegment[] }) {
   const barkTex = getBarkTexture(BARK_COLOR);
   const barkNorm = getBarkNormal();
 
-  const transforms = useMemo(() => {
-    return branches.map((b) => computeCylinderTransform(b.start, b.end));
+  const instancedData = useMemo(() => {
+    return branches.map((b) => {
+      const t = computeCylinderTransform(b.start, b.end);
+      const avgRadius = (b.radiusStart + b.radiusEnd) / 2;
+      return {
+        pos: t.position,
+        rot: t.quaternion,
+        scale: [avgRadius, t.length, avgRadius] as [number, number, number],
+      };
+    });
   }, [branches]);
 
+  if (instancedData.length === 0) return null;
+
   return (
-    <group>
-      {branches.map((b, i) => {
-        const t = transforms[i];
-        return (
-          <mesh key={i} position={t.position} quaternion={t.quaternion}>
-            <cylinderGeometry args={[b.radiusEnd, b.radiusStart, t.length, 6]} />
-            <meshStandardMaterial
-              map={barkTex}
-              normalMap={barkNorm}
-              color={BARK_COLOR}
-              roughness={0.95}
-              metalness={0.0}
-            />
-          </mesh>
-        );
-      })}
-    </group>
+    <Instances range={instancedData.length} limit={instancedData.length}>
+      <cylinderGeometry args={[1, 1, 1, 6]} />
+      <meshStandardMaterial map={barkTex} normalMap={barkNorm} color={BARK_COLOR} roughness={0.95} metalness={0.0} />
+      {instancedData.map((d, i) => (
+        <Instance key={i} position={d.pos} quaternion={d.rot} scale={d.scale} />
+      ))}
+    </Instances>
   );
 }
 
@@ -101,19 +106,17 @@ function JujubeThorns({ branches, seed }: { branches: BranchSegment[]; seed: num
   const thorns = useMemo(() => {
     const rng = seededRandom(seed + 900);
     const arr: { pos: Vec3; rot: [number, number, number] }[] = [];
-    // Place thorns along branch segments
     for (const b of branches) {
       const thornCount = 1 + Math.floor(rng() * 2);
       for (let t = 0; t < thornCount; t++) {
         if (rng() > 0.55) continue;
         const frac = 0.2 + rng() * 0.6;
-        const pos: Vec3 = [
-          b.start[0] + (b.end[0] - b.start[0]) * frac + (rng() - 0.5) * 0.03,
-          b.start[1] + (b.end[1] - b.start[1]) * frac + (rng() - 0.5) * 0.03,
-          b.start[2] + (b.end[2] - b.start[2]) * frac + (rng() - 0.5) * 0.03,
-        ];
         arr.push({
-          pos,
+          pos: [
+            b.start[0] + (b.end[0] - b.start[0]) * frac + (rng() - 0.5) * 0.03,
+            b.start[1] + (b.end[1] - b.start[1]) * frac + (rng() - 0.5) * 0.03,
+            b.start[2] + (b.end[2] - b.start[2]) * frac + (rng() - 0.5) * 0.03,
+          ],
           rot: [rng() * Math.PI * 0.5, rng() * Math.PI * 2, rng() * Math.PI * 0.3],
         });
       }
@@ -121,15 +124,16 @@ function JujubeThorns({ branches, seed }: { branches: BranchSegment[]; seed: num
     return arr;
   }, [branches, seed]);
 
+  if (thorns.length === 0) return null;
+
   return (
-    <group>
+    <Instances range={thorns.length} limit={thorns.length}>
+      <coneGeometry args={[0.007, 0.04, 4]} />
+      <meshStandardMaterial color="#6a5a3a" roughness={0.9} />
       {thorns.map((thorn, i) => (
-        <mesh key={i} position={thorn.pos} rotation={thorn.rot}>
-          <coneGeometry args={[0.007, 0.04, 4]} />
-          <meshStandardMaterial color="#6a5a3a" roughness={0.9} />
-        </mesh>
+        <Instance key={i} position={thorn.pos} rotation={thorn.rot} />
       ))}
-    </group>
+    </Instances>
   );
 }
 
@@ -146,42 +150,51 @@ function JujubeFruits({ fruitPositions, seed = 0 }: {
     }
   });
 
-  const fruits = useMemo(() => {
+  const { fruits, stems } = useMemo(() => {
     const rng = seededRandom(seed + 700);
-    return fruitPositions.map((pos) => ({
-      pos: [pos[0], pos[1] - 0.06 - rng() * 0.08, pos[2]] as Vec3,
-      scale: 0.035 + rng() * 0.02,
-      ripeness: rng(),
-    }));
+    const fArr: any[] = [];
+    const stArr: any[] = [];
+    
+    fruitPositions.forEach((pos) => {
+      const scale = 0.035 + rng() * 0.02;
+      const r = rng();
+      
+      const color = new THREE.Color();
+      if (r < 0.3) {
+        color.lerpColors(new THREE.Color('#4a8a2a'), new THREE.Color('#a4b044'), r * 3.3);
+      } else if (r < 0.7) {
+        color.lerpColors(new THREE.Color('#a4b044'), new THREE.Color('#c44a28'), (r - 0.3) * 2.5);
+      } else {
+        color.lerpColors(new THREE.Color('#c44a28'), new THREE.Color('#8a2020'), (r - 0.7) * 3.3);
+      }
+      
+      const p: Vec3 = [pos[0], pos[1] - 0.06 - rng() * 0.08, pos[2]];
+      fArr.push({ pos: p, scale, color });
+      stArr.push({ pos: [p[0], p[1] + scale * 0.9, p[2]] });
+    });
+    return { fruits: fArr, stems: stArr };
   }, [fruitPositions, seed]);
 
   return (
     <group ref={groupRef}>
-      {fruits.map((fruit, i) => {
-        const r = fruit.ripeness;
-        const color = new THREE.Color();
-        if (r < 0.3) {
-          color.lerpColors(new THREE.Color('#4a8a2a'), new THREE.Color('#a4b044'), r * 3.3);
-        } else if (r < 0.7) {
-          color.lerpColors(new THREE.Color('#a4b044'), new THREE.Color('#c44a28'), (r - 0.3) * 2.5);
-        } else {
-          color.lerpColors(new THREE.Color('#c44a28'), new THREE.Color('#8a2020'), (r - 0.7) * 3.3);
-        }
-
-        return (
-          <group key={i} position={fruit.pos}>
-            <mesh scale={fruit.scale}>
-              <sphereGeometry args={[1, 8, 6]} />
-              <meshStandardMaterial color={color} roughness={0.35} metalness={0.02} />
-            </mesh>
-            {/* Tiny stem connecting to branch */}
-            <mesh position={[0, fruit.scale * 0.9, 0]}>
-              <cylinderGeometry args={[0.003, 0.005, 0.05, 3]} />
-              <meshStandardMaterial color="#5a4a30" roughness={0.9} />
-            </mesh>
-          </group>
-        );
-      })}
+      {fruits.length > 0 && (
+        <Instances range={fruits.length} limit={fruits.length}>
+          <sphereGeometry args={[1, 8, 6]} />
+          <meshStandardMaterial roughness={0.35} metalness={0.02} />
+          {fruits.map((f, i) => (
+            <Instance key={i} position={f.pos} scale={f.scale} color={f.color} />
+          ))}
+        </Instances>
+      )}
+      {stems.length > 0 && (
+        <Instances range={stems.length} limit={stems.length}>
+          <cylinderGeometry args={[0.003, 0.005, 0.05, 3]} />
+          <meshStandardMaterial color="#5a4a30" roughness={0.9} />
+          {stems.map((st, i) => (
+            <Instance key={i} position={st.pos} />
+          ))}
+        </Instances>
+      )}
     </group>
   );
 }
@@ -204,21 +217,26 @@ function JujubeRoots({ seed = 0 }: { seed?: number }) {
         -0.04,
         Math.sin(angle) * length,
       ];
-      const transform = computeCylinderTransform(start, end);
-      arr.push({ ...transform, thickness });
+      const t = computeCylinderTransform(start, end);
+      arr.push({
+        pos: t.position,
+        rot: t.quaternion,
+        scale: [thickness * 0.3, t.length, thickness] as [number, number, number]
+      });
     }
     return arr;
   }, [seed]);
 
+  if (rootTransforms.length === 0) return null;
+
   return (
-    <group>
+    <Instances range={rootTransforms.length} limit={rootTransforms.length}>
+      <cylinderGeometry args={[1, 1, 1, 5]} />
+      <meshStandardMaterial map={barkTex} color="#3a2e18" roughness={0.98} />
       {rootTransforms.map((rt, i) => (
-        <mesh key={i} position={rt.position} quaternion={rt.quaternion}>
-          <cylinderGeometry args={[rt.thickness * 0.3, rt.thickness, rt.length, 5]} />
-          <meshStandardMaterial map={barkTex} color="#3a2e18" roughness={0.98} />
-        </mesh>
+        <Instance key={i} position={rt.pos} quaternion={rt.rot} scale={rt.scale} />
       ))}
-    </group>
+    </Instances>
   );
 }
 
@@ -304,14 +322,13 @@ export default function JujubeTree({ x, z, groundY = 0 }: JujubeTreeProps) {
 
       {/* ── Connected branches + thorns + leaves + fruits ── */}
       <group ref={canopyRef}>
+        {/* Connected branch segments */}
         <BranchRenderer branches={treeData.branches} />
         <JujubeThorns branches={treeData.branches} seed={seed} />
 
-        {/* Leaf clusters at branch tips */}
-        {treeData.leafTipPositions.map((pos, i) => (
-          <JujubeLeafCluster key={i} position={pos} size={0.5 + (i % 3) * 0.12} />
-        ))}
-
+        {/* Aggregated Leaf Clusters */}
+        <JujubeLeafClusters positions={treeData.leafTipPositions} />
+        
         {/* Fruits from branch junctions */}
         <JujubeFruits fruitPositions={treeData.fruitPositions} seed={seed} />
       </group>
