@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import * as THREE from 'three';
+import { Html, Text } from '@react-three/drei';
 import { getTerrainHeight } from '../../lib/terrain';
 import { useOrchardStore } from '../../store/useOrchardStore';
 import { getTimeConfig } from '../../lib/timeOfDay';
@@ -202,7 +203,7 @@ function buildSnakeRoadGeometry(
       const side = (i / 52) % 2 === 0 ? 1 : -1;
       const lampX = pt.x + normX * (halfW + 1.8) * side;
       const lampZ = pt.z + normZ * (halfW + 1.8) * side;
-      const rotY = Math.atan2(tangent.x, tangent.z) + (side > 0 ? Math.PI / 2 : -Math.PI / 2);
+      const rotY = Math.atan2(tangent.x, tangent.z) + (side > 0 ? 0 : Math.PI);
       lampPositions.push({ x: lampX, z: lampZ, rotY });
     }
   }
@@ -240,57 +241,124 @@ export function StreetLamp({ x, z, rotationY = 0 }: { x: number; z: number; rota
 
   return (
     <group position={[x, groundY, z]} rotation={[0, rotationY, 0]}>
-      {/* Base flange */}
+      {/* Base Tier 1 */}
       <mesh position={[0, 0.1, 0]}>
-        <cylinderGeometry args={[0.3, 0.4, 0.2, 8]} />
+        <cylinderGeometry args={[0.25, 0.35, 0.2, 16]} />
+        <meshStandardMaterial color="#1e293b" metalness={0.8} roughness={0.3} />
+      </mesh>
+      
+      {/* Base Tier 2 */}
+      <mesh position={[0, 0.4, 0]}>
+        <cylinderGeometry args={[0.15, 0.22, 0.4, 16]} />
         <meshStandardMaterial color="#0f172a" metalness={0.8} roughness={0.3} />
       </mesh>
 
       {/* Main vertical post */}
-      <mesh position={[0, 2.3, 0]}>
-        <cylinderGeometry args={[0.1, 0.15, 4.6, 10]} />
+      <mesh position={[0, 2.6, 0]}>
+        <cylinderGeometry args={[0.08, 0.15, 4.0, 16]} />
         <meshStandardMaterial color="#1e293b" metalness={0.85} roughness={0.2} />
       </mesh>
 
-      {/* Curved arm */}
-      <mesh position={[0.5, 4.5, 0]} rotation={[0, 0, -Math.PI / 4]}>
-        <cylinderGeometry args={[0.07, 0.07, 1.1, 8]} />
+      {/* Post Top Cap */}
+      <mesh position={[0, 4.6, 0]}>
+        <sphereGeometry args={[0.08, 16, 16]} />
+        <meshStandardMaterial color="#0f172a" metalness={0.9} roughness={0.2} />
+      </mesh>
+
+      {/* Diagonal arm */}
+      <mesh position={[0.176, 4.776, 0]} rotation={[0, 0, -Math.PI / 4]}>
+        <cylinderGeometry args={[0.06, 0.08, 0.5, 12]} />
         <meshStandardMaterial color="#1e293b" metalness={0.85} roughness={0.2} />
       </mesh>
 
-      {/* Lamp Head Fixture */}
-      <mesh position={[0.9, 4.6, 0]}>
-        <boxGeometry args={[0.55, 0.16, 0.35]} />
+      {/* Joint */}
+      <mesh position={[0.353, 4.953, 0]}>
+        <sphereGeometry args={[0.07, 16, 16]} />
+        <meshStandardMaterial color="#0f172a" metalness={0.9} roughness={0.2} />
+      </mesh>
+
+      {/* Horizontal arm */}
+      <mesh position={[0.853, 4.953, 0]} rotation={[0, 0, -Math.PI / 2]}>
+        <cylinderGeometry args={[0.04, 0.06, 1.0, 12]} />
+        <meshStandardMaterial color="#1e293b" metalness={0.85} roughness={0.2} />
+      </mesh>
+
+      {/* Lamp Head Fixture - Sleek & Modern */}
+      <mesh position={[1.053, 4.953, 0]}>
+        <boxGeometry args={[0.7, 0.08, 0.3]} />
         <meshStandardMaterial color="#020617" metalness={0.9} roughness={0.15} />
+      </mesh>
+      
+      {/* Lamp Head Top Ridge */}
+      <mesh position={[1.053, 5.013, 0]}>
+        <boxGeometry args={[0.5, 0.04, 0.15]} />
+        <meshStandardMaterial color="#334155" metalness={0.9} roughness={0.2} />
       </mesh>
 
       {/* Emissive Lamp Glass */}
-      <mesh position={[0.9, 4.51, 0]}>
-        <boxGeometry args={[0.45, 0.04, 0.28]} />
+      <mesh position={[1.053, 4.903, 0]}>
+        <boxGeometry args={[0.6, 0.02, 0.2]} />
         <meshStandardMaterial
           color="#ffffff"
-          emissive={isNight ? '#fef08a' : '#64748b'}
+          emissive={isNight ? '#ffedd5' : '#64748b'}
           emissiveIntensity={isNight ? 2.5 : 0.2}
         />
       </mesh>
 
       {/* Street Light Illumination */}
       {isNight && (
-        <>
-          <pointLight
-            position={[0.9, 4.2, 0]}
-            color="#fef08a"
-            intensity={3.0}
-            distance={12}
-            decay={2.0}
-          />
-          {/* Soft ground illumination pool */}
-          <mesh position={[0.9, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <circleGeometry args={[3.5, 24]} />
-            <meshBasicMaterial color="#fef08a" transparent opacity={0.08} />
-          </mesh>
-        </>
+        <pointLight
+          position={[1.053, 4.7, 0]}
+          color="#ffedd5"
+          intensity={25.0}
+          distance={60}
+          decay={1.8}
+        />
       )}
+    </group>
+  );
+}
+
+// Directional Road Sign (Realistic Highway Style)
+export function RoadSign({ x, z, text, rotationY = 0 }: { x: number; z: number; text: string; rotationY?: number }) {
+  const groundY = getTerrainHeight(x, z);
+  return (
+    <group position={[x, groundY, z]} rotation={[0, rotationY, 0]}>
+      {/* Left Pole */}
+      <mesh position={[-0.8, 1, 0]}>
+        <cylinderGeometry args={[0.04, 0.04, 2]} />
+        <meshStandardMaterial color="#94a3b8" metalness={0.8} roughness={0.3} />
+      </mesh>
+      {/* Right Pole */}
+      <mesh position={[0.8, 1, 0]}>
+        <cylinderGeometry args={[0.04, 0.04, 2]} />
+        <meshStandardMaterial color="#94a3b8" metalness={0.8} roughness={0.3} />
+      </mesh>
+      
+      {/* Sign Board (Highway Green) */}
+      <mesh position={[0, 1.8, 0.02]}>
+        <boxGeometry args={[2.4, 0.8, 0.04]} />
+        <meshStandardMaterial color="#166534" roughness={0.6} />
+      </mesh>
+      
+      {/* Sign White Border Frame */}
+      <mesh position={[0, 1.8, 0.01]}>
+        <boxGeometry args={[2.45, 0.85, 0.02]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.8} />
+      </mesh>
+
+      {/* 3D Text */}
+      <Text
+        position={[0, 1.8, 0.041]} // Placed slightly in front of the green board
+        fontSize={0.25}
+        color="white"
+        anchorX="center"
+        anchorY="middle"
+        outlineWidth={0.005}
+        outlineColor="#000000"
+      >
+        {text}
+      </Text>
     </group>
   );
 }
@@ -320,17 +388,7 @@ export default function OrchardRoads() {
         <ringGeometry args={[3.2, 3.5, 48]} />
         <meshStandardMaterial color="#334155" roughness={0.6} />
       </mesh>
-      {/* Center Island Outer White Divider Line */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.205, 0]}>
-        <ringGeometry args={[3.5, 3.66, 48]} />
-        <meshBasicMaterial
-          color="#ffffff"
-          side={THREE.DoubleSide}
-          polygonOffset
-          polygonOffsetFactor={-6}
-          polygonOffsetUnits={-6}
-        />
-      </mesh>
+
       {/* Roundabout Outer Concrete Curb */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.21, 0]}>
         <ringGeometry args={[8.9, 9.4, 48]} />
@@ -350,26 +408,7 @@ export default function OrchardRoads() {
           polygonOffsetUnits={-2}
         />
       </mesh>
-      {/* White Center Divider Line (2-Lane Road Divider) */}
-      <mesh geometry={road1.centerlineGeo}>
-        <meshBasicMaterial
-          color="#ffffff"
-          side={THREE.DoubleSide}
-          polygonOffset
-          polygonOffsetFactor={-6}
-          polygonOffsetUnits={-6}
-        />
-      </mesh>
-      {/* White Outer Edge Lines */}
-      <mesh geometry={road1.edgelineGeo}>
-        <meshBasicMaterial
-          color="#ffffff"
-          side={THREE.DoubleSide}
-          polygonOffset
-          polygonOffsetFactor={-6}
-          polygonOffsetUnits={-6}
-        />
-      </mesh>
+
       {/* Outer Concrete Curbs */}
       <mesh geometry={road1.curbGeo}>
         <meshStandardMaterial color="#334155" roughness={0.6} side={THREE.DoubleSide} />
@@ -388,26 +427,7 @@ export default function OrchardRoads() {
           polygonOffsetUnits={-2}
         />
       </mesh>
-      {/* White Center Divider Line (2-Lane Road Divider) */}
-      <mesh geometry={road2.centerlineGeo}>
-        <meshBasicMaterial
-          color="#ffffff"
-          side={THREE.DoubleSide}
-          polygonOffset
-          polygonOffsetFactor={-6}
-          polygonOffsetUnits={-6}
-        />
-      </mesh>
-      {/* White Outer Edge Lines */}
-      <mesh geometry={road2.edgelineGeo}>
-        <meshBasicMaterial
-          color="#ffffff"
-          side={THREE.DoubleSide}
-          polygonOffset
-          polygonOffsetFactor={-6}
-          polygonOffsetUnits={-6}
-        />
-      </mesh>
+
       {/* Outer Concrete Curbs */}
       <mesh geometry={road2.curbGeo}>
         <meshStandardMaterial color="#334155" roughness={0.6} side={THREE.DoubleSide} />
@@ -420,6 +440,13 @@ export default function OrchardRoads() {
       {road2.lampPositions.map((lamp, i) => (
         <StreetLamp key={`lamp2-${i}`} x={lamp.x} z={lamp.z} rotationY={lamp.rotY} />
       ))}
+
+      {/* ── Directional Signs ── */}
+      <RoadSign x={8} z={-12} text="MANGO GROVE ^" rotationY={0} />
+      <RoadSign x={-8} z={12} text="PAPAYA GROVE v" rotationY={Math.PI} />
+      <RoadSign x={12} z={8} text="GUAVA GROVE ->" rotationY={-Math.PI / 2} />
+      <RoadSign x={-12} z={-8} text="<- JUJUBE GROVE" rotationY={Math.PI / 2} />
+      <RoadSign x={10} z={-5} text="LEMON GROVE ->" rotationY={-Math.PI / 4} />
     </group>
   );
 }
