@@ -9,14 +9,14 @@ import { TREE_PLACEMENTS } from '../../lib/products';
 import { getTerrainHeight } from '../../lib/terrain';
 import { useOrchardStore } from '../../store/useOrchardStore';
 
-const ACCEL = 38;   // speed units per second forward
+const ACCEL = 42;   // speed units per second forward
 const BRAKE = 42;   // braking deceleration per second
-const REVERSE_ACCEL = 14;   // reverse acceleration speed per second
+const REVERSE_ACCEL = 18;   // reverse acceleration speed per second
 const DECEL = 15;   // passive coasting decay per second
-const MAX_SPEED = 15;   // max forward m/s
+const MAX_SPEED = 20  ;   // max forward m/s
 const MAX_REV_SPEED = 5.5;  // max reverse m/s
 const STEER_VEL = 2.1;  // steer speed rad/s
-const HARVEST_RADIUS = 14;
+const HARVEST_RADIUS = 12;
 
 // Pre-allocated vectors — never create new ones in useFrame
 const _forward = new THREE.Vector3();
@@ -164,8 +164,8 @@ export default function Vehicle({ headlightsIntensity = 8, isNight = false }: Ve
     // ── 1. ENGINE ACCELERATION AND BRAKING (WITH HILL RESISTANCE) ───────────
     if (keys.forward) {
       // Accelerate forward, fought slightly by gravity but with a high guaranteed minimum engine power
-      const activeAccel = Math.max(14.0, ACCEL - hillGravityAccel * 0.8);
-      const uphillSpeedCap = Math.max(10.5, MAX_SPEED - hillGravityAccel * 0.4);
+      const activeAccel = Math.max(16.0, ACCEL - hillGravityAccel * 0.8);
+      const uphillSpeedCap = Math.max(12.5, MAX_SPEED - hillGravityAccel * 0.4);
       currentFwdSpeed = Math.min(
         currentFwdSpeed + activeAccel * delta,
         uphillSpeedCap
