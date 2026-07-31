@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import * as THREE from 'three';
-import { Html } from '@react-three/drei';
+import { Html, Text } from '@react-three/drei';
 import { getTerrainHeight } from '../../lib/terrain';
 import { useOrchardStore } from '../../store/useOrchardStore';
 import { getTimeConfig } from '../../lib/timeOfDay';
@@ -319,27 +319,46 @@ export function StreetLamp({ x, z, rotationY = 0 }: { x: number; z: number; rota
   );
 }
 
-// Directional Road Sign
+// Directional Road Sign (Realistic Highway Style)
 export function RoadSign({ x, z, text, rotationY = 0 }: { x: number; z: number; text: string; rotationY?: number }) {
   const groundY = getTerrainHeight(x, z);
   return (
     <group position={[x, groundY, z]} rotation={[0, rotationY, 0]}>
-      {/* Sign Pole */}
-      <mesh position={[0, 1, 0]}>
-        <cylinderGeometry args={[0.05, 0.05, 2]} />
-        <meshStandardMaterial color="#475569" />
+      {/* Left Pole */}
+      <mesh position={[-0.8, 1, 0]}>
+        <cylinderGeometry args={[0.04, 0.04, 2]} />
+        <meshStandardMaterial color="#94a3b8" metalness={0.8} roughness={0.3} />
       </mesh>
-      {/* Sign Board */}
-      <mesh position={[0, 1.8, 0]}>
-        <boxGeometry args={[2.5, 0.8, 0.05]} />
-        <meshStandardMaterial color="#1e40af" />
+      {/* Right Pole */}
+      <mesh position={[0.8, 1, 0]}>
+        <cylinderGeometry args={[0.04, 0.04, 2]} />
+        <meshStandardMaterial color="#94a3b8" metalness={0.8} roughness={0.3} />
       </mesh>
-      {/* HTML Overlay for Text */}
-      <Html position={[0, 1.8, 0.03]} transform center distanceFactor={8}>
-        <div className="text-white font-bold text-4xl w-64 text-center tracking-wide shadow-black drop-shadow-lg">
-          {text}
-        </div>
-      </Html>
+      
+      {/* Sign Board (Highway Green) */}
+      <mesh position={[0, 1.8, 0.02]}>
+        <boxGeometry args={[2.4, 0.8, 0.04]} />
+        <meshStandardMaterial color="#166534" roughness={0.6} />
+      </mesh>
+      
+      {/* Sign White Border Frame */}
+      <mesh position={[0, 1.8, 0.01]}>
+        <boxGeometry args={[2.45, 0.85, 0.02]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.8} />
+      </mesh>
+
+      {/* 3D Text */}
+      <Text
+        position={[0, 1.8, 0.041]} // Placed slightly in front of the green board
+        fontSize={0.25}
+        color="white"
+        anchorX="center"
+        anchorY="middle"
+        outlineWidth={0.005}
+        outlineColor="#000000"
+      >
+        {text}
+      </Text>
     </group>
   );
 }
@@ -423,11 +442,11 @@ export default function OrchardRoads() {
       ))}
 
       {/* ── Directional Signs ── */}
-      <RoadSign x={8} z={-12} text="Mango Grove ⬆️" rotationY={0} />
-      <RoadSign x={-8} z={12} text="Papaya Grove ⬇️" rotationY={Math.PI} />
-      <RoadSign x={12} z={8} text="Guava Grove ➡️" rotationY={-Math.PI / 2} />
-      <RoadSign x={-12} z={-8} text="Jujube Grove ⬅️" rotationY={Math.PI / 2} />
-      <RoadSign x={10} z={-5} text="Lemon Grove ↗️" rotationY={-Math.PI / 4} />
+      <RoadSign x={8} z={-12} text="MANGO GROVE ^" rotationY={0} />
+      <RoadSign x={-8} z={12} text="PAPAYA GROVE v" rotationY={Math.PI} />
+      <RoadSign x={12} z={8} text="GUAVA GROVE ->" rotationY={-Math.PI / 2} />
+      <RoadSign x={-12} z={-8} text="<- JUJUBE GROVE" rotationY={Math.PI / 2} />
+      <RoadSign x={10} z={-5} text="LEMON GROVE ->" rotationY={-Math.PI / 4} />
     </group>
   );
 }
