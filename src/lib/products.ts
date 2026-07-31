@@ -81,28 +81,33 @@ export interface TreeNode {
 }
 
 export const TREE_PLACEMENTS: TreeNode[] = [
-  // Guava grove — East, multiple clusters (special zone)
-  { type: "guava", x: 60, z: -20 },
-  { type: "guava", x: 65, z: 10 },
-  { type: "guava", x: 70, z: -5 },
-  { type: "guava", x: 55, z: 25 },
-  { type: "guava", x: 75, z: 30 },
-  { type: "guava", x: 58, z: -40 },
+  // Guava grove — East
+  { type: "guava", x: 60, z: -10 },
+  { type: "guava", x: 60, z: 10 },
+  { type: "guava", x: 75, z: -10 },
+  { type: "guava", x: 75, z: 10 },
+  { type: "guava", x: 67, z: 0 },
   // Mango grove — North
-  { type: "mango", x: -10, z: -65 },
-  { type: "mango", x: 15, z: -70 },
-  { type: "mango", x: 30, z: -60 },
-  { type: "mango", x: -25, z: -75 },
+  { type: "mango", x: -15, z: -65 },
+  { type: "mango", x: 0, z: -65 },
+  { type: "mango", x: 15, z: -65 },
+  { type: "mango", x: -7.5, z: -75 },
+  { type: "mango", x: 7.5, z: -75 },
   // Papaya — South
-  { type: "papaya", x: 5, z: 60 },
   { type: "papaya", x: -15, z: 65 },
-  { type: "papaya", x: 20, z: 70 },
+  { type: "papaya", x: 0, z: 65 },
+  { type: "papaya", x: 15, z: 65 },
+  { type: "papaya", x: -7.5, z: 75 },
+  { type: "papaya", x: 7.5, z: 75 },
   // Jujube — West
   { type: "jujube", x: -60, z: -10 },
-  { type: "jujube", x: -70, z: 20 },
-  { type: "jujube", x: -55, z: 35 },
-  // Lemon — Center cluster
-  { type: "lemon", x: -20, z: 10 },
-  { type: "lemon", x: 10, z: -15 },
-  { type: "lemon", x: 25, z: 15 },
+  { type: "jujube", x: -60, z: 10 },
+  { type: "jujube", x: -75, z: -10 },
+  { type: "jujube", x: -75, z: 10 },
+  { type: "jujube", x: -67, z: 0 },
+  // Lemon — Center cluster (avoiding roundabout at 0,0)
+  { type: "lemon", x: 20, z: -20 },
+  { type: "lemon", x: 30, z: -20 },
+  { type: "lemon", x: 20, z: -10 },
+  { type: "lemon", x: 30, z: -10 },
 ];
