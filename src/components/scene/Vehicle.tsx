@@ -206,15 +206,18 @@ export default function Vehicle({ headlightsIntensity = 8, isNight = false }: Ve
     // Apply direct linear velocity (retaining gravity Y)
     body.setLinvel({ x: targetVelX, y: vel.y, z: targetVelZ }, true);
 
-    // ── 2. STEERING — set angular velocity DIRECTLY (bypasses damping fight)
+    // ── 2. STEERING — Smooth angular velocity
     {
-      let yAngVel = 0;
+      let targetYAngVel = 0;
       if (Math.abs(currentFwdSpeed) > 0.1) {
         const steerSign = currentFwdSpeed >= 0 ? 1 : -1; // flip steer direction when reversing
-        if (keys.left) yAngVel = STEER_VEL * steerSign;
-        if (keys.right) yAngVel = -STEER_VEL * steerSign;
+        if (keys.left) targetYAngVel = STEER_VEL * steerSign;
+        if (keys.right) targetYAngVel = -STEER_VEL * steerSign;
       }
-      body.setAngvel({ x: 0, y: yAngVel, z: 0 }, true);
+      // Lerp angular velocity to remove the instant "sloppy/snappy" feel
+      const currentAngVel = body.angvel();
+      const newYAngVel = currentAngVel.y + (targetYAngVel - currentAngVel.y) * Math.min(delta * 12, 1);
+      body.setAngvel({ x: 0, y: newYAngVel, z: 0 }, true);
     }
 
     // Snap visual chassis to road/ground height under the car so it follows terrain and road surface
@@ -302,10 +305,9 @@ export default function Vehicle({ headlightsIntensity = 8, isNight = false }: Ve
         ref={chassisRef}
         position={[0, 3, 0]}         // spawn well above ground, settles naturally
         linearDamping={0.5}
-        angularDamping={0}
+        angularDamping={0.5}
         mass={80}
         colliders={false}
-        ccd                           // continuous collision detection — prevents tunneling
       >
         <CuboidCollider args={[0.9, 0.45, 1.55]} />
       </RigidBody>

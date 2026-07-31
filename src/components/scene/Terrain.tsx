@@ -7,7 +7,7 @@ export default function Terrain() {
   const S = TERRAIN_SIZE;
 
   // Generate the rolling hills geometry dynamically using our noise function
-  const hillsGeometry = useMemo(() => {
+  const visualGeometry = useMemo(() => {
     const geo = new THREE.PlaneGeometry(S, S, TERRAIN_SEGMENTS, TERRAIN_SEGMENTS);
     geo.rotateX(-Math.PI / 2); // align plane with the ground plane (XZ)
 
@@ -23,18 +23,36 @@ export default function Terrain() {
     return geo;
   }, [S]);
 
+  // Generate a much lower resolution geometry for physics to prevent sluggishness
+  const physicsGeometry = useMemo(() => {
+    const geo = new THREE.PlaneGeometry(S, S, 16, 16);
+    geo.rotateX(-Math.PI / 2);
+    const posAttr = geo.attributes.position;
+    for (let i = 0; i < posAttr.count; i++) {
+      const vx = posAttr.getX(i);
+      const vz = posAttr.getZ(i);
+      const vy = getTerrainHeight(vx, vz);
+      posAttr.setY(i, vy);
+    }
+    return geo;
+  }, [S]);
+
   return (
     <group>
-      {/* ── Main rolling hills (physics trimesh + visual mesh) ── */}
+      {/* ── Main rolling hills ── */}
+      {/* Visual mesh (high poly) */}
+      <mesh receiveShadow geometry={visualGeometry}>
+        <meshStandardMaterial
+          color="#3a7d44"
+          roughness={0.72}
+          metalness={0.1}
+          flatShading={false}
+        />
+      </mesh>
+      
+      {/* Physics mesh (low poly) */}
       <RigidBody type="fixed" colliders="trimesh">
-        <mesh receiveShadow geometry={hillsGeometry}>
-          <meshStandardMaterial
-            color="#3a7d44"
-            roughness={0.72}
-            metalness={0.1}
-            flatShading={false}
-          />
-        </mesh>
+        <mesh geometry={physicsGeometry} visible={false} />
       </RigidBody>
 
       {/* ── Boundary wall slabs (solid, invisible physics boundaries) ── */}
