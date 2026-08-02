@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import * as THREE from 'three';
-import { Html, Text } from '@react-three/drei';
+import { Text } from '@react-three/drei';
 import { getTerrainHeight } from '../../lib/terrain';
 import { useOrchardStore } from '../../store/useOrchardStore';
 import { getTimeConfig } from '../../lib/timeOfDay';
@@ -70,7 +70,7 @@ function buildSnakeRoadGeometry(
 
   const halfW = width / 2; // 2.6m half-width for 2-lane road
   const curbW = 0.35;
-  const roadElevation = 0.06; // Realistic road elevation sitting flush on ground
+  const roadElevation = 0.15; // Increased elevation to prevent z-fighting with terrain interpolation
   const lineHalfW = 0.08; // 0.16m wide painted line
   const WIDTH_STEPS = 4; // 4 sub-strips (5 vertices across width) to hug terrain curves across road
 
@@ -379,8 +379,8 @@ export default function OrchardRoads() {
           metalness={0.05}
           side={THREE.DoubleSide}
           polygonOffset
-          polygonOffsetFactor={-2}
-          polygonOffsetUnits={-2}
+          polygonOffsetFactor={-5}
+          polygonOffsetUnits={-5}
         />
       </mesh>
       {/* Roundabout Center Grass Island Curb */}
@@ -404,8 +404,8 @@ export default function OrchardRoads() {
           metalness={0.05}
           side={THREE.DoubleSide}
           polygonOffset
-          polygonOffsetFactor={-2}
-          polygonOffsetUnits={-2}
+          polygonOffsetFactor={-5}
+          polygonOffsetUnits={-5}
         />
       </mesh>
 
@@ -423,8 +423,8 @@ export default function OrchardRoads() {
           metalness={0.05}
           side={THREE.DoubleSide}
           polygonOffset
-          polygonOffsetFactor={-2}
-          polygonOffsetUnits={-2}
+          polygonOffsetFactor={-5}
+          polygonOffsetUnits={-5}
         />
       </mesh>
 
