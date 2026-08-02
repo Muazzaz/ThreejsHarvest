@@ -442,11 +442,11 @@ export default function OrchardRoads() {
       ))}
 
       {/* ── Directional Signs ── */}
-      <RoadSign x={8} z={-12} text="MANGO GROVE ^" rotationY={0} />
-      <RoadSign x={-8} z={12} text="PAPAYA GROVE v" rotationY={Math.PI} />
-      <RoadSign x={12} z={8} text="GUAVA GROVE ->" rotationY={-Math.PI / 2} />
-      <RoadSign x={-12} z={-8} text="<- JUJUBE GROVE" rotationY={Math.PI / 2} />
-      <RoadSign x={10} z={-5} text="LEMON GROVE ->" rotationY={-Math.PI / 4} />
+      <RoadSign x={0} z={-14} text="MANGO GROVE ^" rotationY={0} />
+      <RoadSign x={0} z={14} text="PAPAYA GROVE v" rotationY={Math.PI} />
+      <RoadSign x={14} z={0} text="GUAVA GROVE ->" rotationY={-Math.PI / 2} />
+      <RoadSign x={-14} z={0} text="<- JUJUBE GROVE" rotationY={Math.PI / 2} />
+      <RoadSign x={16} z={-4} text="LEMON GROVE ->" rotationY={-Math.PI / 4} />
     </group>
   );
 }
