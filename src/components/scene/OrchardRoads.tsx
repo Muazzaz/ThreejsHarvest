@@ -6,7 +6,7 @@ import { useOrchardStore } from '../../store/useOrchardStore';
 import { getTimeConfig } from '../../lib/timeOfDay';
 
 // Continuous 2-lane Highway Loop Waypoints traversing all fruit groves in seamless circuits
-const SNAKE_ROAD_PATH_1: [number, number][] = [
+export const SNAKE_ROAD_PATH_1: [number, number][] = [
   [0, 0],
   [25, -20],
   [50, -35],
@@ -19,7 +19,7 @@ const SNAKE_ROAD_PATH_1: [number, number][] = [
   [-18, -12],
 ];
 
-const SNAKE_ROAD_PATH_2: [number, number][] = [
+export const SNAKE_ROAD_PATH_2: [number, number][] = [
   [0, 0],
   [25, 18],
   [55, 30],
