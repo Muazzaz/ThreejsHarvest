@@ -21,7 +21,11 @@ const HARVEST_RADIUS = 12;
 // Pre-allocated vectors — never create new ones in useFrame
 const _forward = new THREE.Vector3();
 const _camTarget = new THREE.Vector3();
+const _smoothedCamTarget = new THREE.Vector3();
+let _camInitialized = false;
 const _camPos = new THREE.Vector3();
+const _targetPos = new THREE.Vector3();
+const _smoothedPos = new THREE.Vector3();
 const _quat = new THREE.Quaternion();
 const _groundNorm = new THREE.Vector3();
 const _carRight = new THREE.Vector3();
@@ -221,18 +225,25 @@ export default function Vehicle({ headlightsIntensity = 8, isNight = false }: Ve
     }
 
     // Snap visual chassis to road/ground height under the car so it follows terrain and road surface
-    const visualY = getTerrainHeight(pos.x, pos.z) + 0.06 + 0.58; // 0.06m road elevation + 0.58m tire radius offset
+    const targetVisualY = getTerrainHeight(pos.x, pos.z) + 0.06 + 0.58; // 0.06m road elevation + 0.58m tire radius offset
+    _targetPos.set(pos.x, targetVisualY, pos.z);
+
+    if (!_camInitialized) {
+      _smoothedPos.copy(_targetPos);
+    } else {
+      _smoothedPos.lerp(_targetPos, Math.min(delta * 20, 1));
+    }
 
     // ── 7. SYNC VISUAL MESH WITH SLOPE ──────────────────────────────────────
     if (meshRef.current) {
-      meshRef.current.position.set(pos.x, visualY, pos.z);
+      meshRef.current.position.copy(_smoothedPos);
 
       // Construct lookAt matrix to align visual chassis perfectly with terrain normal and forward dir
       _carRight.crossVectors(_forward, _groundNorm).normalize();
       _carFwd.crossVectors(_groundNorm, _carRight).normalize();
 
       _basisMat.makeBasis(_carRight, _groundNorm, _carFwd.negate());
-      meshRef.current.quaternion.setFromRotationMatrix(_basisMat);
+      meshRef.current.quaternion.slerp(new THREE.Quaternion().setFromRotationMatrix(_basisMat), Math.min(delta * 15, 1));
     }
 
     // ── WHEEL SPIN — rotate wheels based on forward speed ────────────────
@@ -265,14 +276,22 @@ export default function Vehicle({ headlightsIntensity = 8, isNight = false }: Ve
     const camAngle = Math.atan2(-_forward.x, -_forward.z) + orbitAngle.current;
     const heightOffset = CAM_HEIGHT + orbitPitch.current * 8;
 
-    _camTarget.set(pos.x, visualY + 1.2, pos.z);
+    _camTarget.set(_smoothedPos.x, _smoothedPos.y + 0.62, _smoothedPos.z);
+    
+    if (!_camInitialized) {
+      _smoothedCamTarget.copy(_camTarget);
+      _camInitialized = true;
+    } else {
+      _smoothedCamTarget.lerp(_camTarget, Math.min(delta * 12, 1));
+    }
+
     _camPos.set(
-      pos.x + Math.sin(camAngle) * CAM_DIST,
-      visualY + heightOffset,
-      pos.z + Math.cos(camAngle) * CAM_DIST
+      _smoothedPos.x + Math.sin(camAngle) * CAM_DIST,
+      _smoothedPos.y + heightOffset - 0.58, // subtract tire radius so camera doesn't bounce too much vertically
+      _smoothedPos.z + Math.cos(camAngle) * CAM_DIST
     );
     camera.position.lerp(_camPos, Math.min(delta * 5, 1));
-    camera.lookAt(_camTarget);
+    camera.lookAt(_smoothedCamTarget);
 
     // ── 9. PROXIMITY DETECTION ──────────────────────────────────────────────
     let closestFruit: FruitType | null = null;

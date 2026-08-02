@@ -27,6 +27,8 @@ function SceneContent({ timeConfig }: { timeConfig: TimeConfig }) {
         shadow-camera-right={80}
         shadow-camera-top={80}
         shadow-camera-bottom={-80}
+        shadow-bias={-0.0001}
+        shadow-normalBias={0.05}
         color={timeConfig.directionalLightColor}
       />
       <hemisphereLight
@@ -99,7 +101,7 @@ export default function OrchadCanvas() {
       shadows
       dpr={[1, 1.5]}
       camera={{ position: [0, 12, 20], fov: 60, near: 0.5, far: 350 }}
-      gl={{ antialias: false, toneMapping: 5 /* ACESFilmic */, powerPreference: 'high-performance' }}
+      gl={{ antialias: true, logarithmicDepthBuffer: true, toneMapping: 5 /* ACESFilmic */, powerPreference: 'high-performance' }}
       style={{ width: '100vw', height: '100vh', background: timeConfig.canvasBackground }}
     >
       <Suspense fallback={null}>
