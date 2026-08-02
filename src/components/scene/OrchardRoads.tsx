@@ -289,15 +289,15 @@ export function StreetLamp({ x, z, rotationY = 0 }: { x: number; z: number; rota
         <meshStandardMaterial color="#020617" metalness={0.9} roughness={0.15} />
       </mesh>
       
-      {/* Lamp Head Top Ridge (Overlap slightly into fixture to prevent z-fighting) */}
-      <mesh position={[1.053, 5.003, 0]}>
+      {/* Lamp Head Top Ridge */}
+      <mesh position={[1.053, 5.013, 0]}>
         <boxGeometry args={[0.5, 0.04, 0.15]} />
         <meshStandardMaterial color="#334155" metalness={0.9} roughness={0.2} />
       </mesh>
 
-      {/* Emissive Lamp Glass (Overlap slightly into fixture) */}
-      <mesh position={[1.053, 4.913, 0]}>
-        <boxGeometry args={[0.58, 0.02, 0.18]} />
+      {/* Emissive Lamp Glass */}
+      <mesh position={[1.053, 4.903, 0]}>
+        <boxGeometry args={[0.6, 0.02, 0.2]} />
         <meshStandardMaterial
           color="#ffffff"
           emissive={isNight ? '#ffedd5' : '#64748b'}
