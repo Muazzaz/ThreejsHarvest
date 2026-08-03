@@ -53,37 +53,46 @@ function createTerrainTexture(S: number): THREE.CanvasTexture {
   
   const roadPattern = ctx.createPattern(patternCanvas, 'repeat')!;
 
-  // Soften the road edges with a drop shadow to blend naturally into the grass
-  ctx.shadowColor = '#3e3020';
-  ctx.shadowBlur = 12;
+  // Create a separate canvas for the road network to prevent overlapping internal shadows
+  const roadCanvas = document.createElement('canvas');
+  roadCanvas.width = size;
+  roadCanvas.height = size;
+  const roadCtx = roadCanvas.getContext('2d')!;
 
-  // Draw Roundabout
-  ctx.beginPath();
-  ctx.arc(mapCoordX(0), mapCoordZ(0), (9.0 / S) * size, 0, Math.PI * 2);
-  ctx.fillStyle = roadPattern;
-  ctx.fill();
+  // Draw Roundabout on road layer
+  roadCtx.beginPath();
+  roadCtx.arc(mapCoordX(0), mapCoordZ(0), (9.0 / S) * size, 0, Math.PI * 2);
+  roadCtx.fillStyle = roadPattern;
+  roadCtx.fill();
   
-  ctx.lineWidth = (5.2 / S) * size;
-  ctx.strokeStyle = roadPattern;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
+  roadCtx.lineWidth = (5.2 / S) * size;
+  roadCtx.strokeStyle = roadPattern;
+  roadCtx.lineCap = 'round';
+  roadCtx.lineJoin = 'round';
 
   const drawPath = (path: [number, number][], closed: boolean) => {
     const points3D = path.map(([x, z]) => new THREE.Vector3(x, 0, z));
     const curve = new THREE.CatmullRomCurve3(points3D, closed, 'centripetal', 0.5);
     const pts = curve.getSpacedPoints(400);
     
-    ctx.beginPath();
-    ctx.moveTo(mapCoordX(pts[0].x), mapCoordZ(pts[0].z));
+    roadCtx.beginPath();
+    roadCtx.moveTo(mapCoordX(pts[0].x), mapCoordZ(pts[0].z));
     for (let i = 1; i < pts.length; i++) {
-      ctx.lineTo(mapCoordX(pts[i].x), mapCoordZ(pts[i].z));
+      roadCtx.lineTo(mapCoordX(pts[i].x), mapCoordZ(pts[i].z));
     }
-    if (closed) ctx.closePath();
-    ctx.stroke();
+    if (closed) roadCtx.closePath();
+    roadCtx.stroke();
   };
 
   drawPath(SNAKE_ROAD_PATH_1, true);
   drawPath(SNAKE_ROAD_PATH_2, true);
+
+  // Soften the unified road edges with a drop shadow to blend naturally into the grass
+  ctx.shadowColor = '#3e3020';
+  ctx.shadowBlur = 12;
+
+  // Draw the unified road layer onto the main terrain canvas
+  ctx.drawImage(roadCanvas, 0, 0);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
