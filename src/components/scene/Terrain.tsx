@@ -23,14 +23,48 @@ function createTerrainTexture(S: number): THREE.CanvasTexture {
   const mapCoordX = (val: number) => ((val + S / 2) / S) * size;
   const mapCoordZ = (val: number) => ((val + S / 2) / S) * size;
   
+  // Generate a realistic, abstract noise pattern for the road (dirt/gravel)
+  const patternCanvas = document.createElement('canvas');
+  patternCanvas.width = 128;
+  patternCanvas.height = 128;
+  const pCtx = patternCanvas.getContext('2d')!;
+  
+  // Base dirt color
+  pCtx.fillStyle = '#655340';
+  pCtx.fillRect(0, 0, 128, 128);
+  
+  // Add random gravel / abstract noise
+  for (let i = 0; i < 6000; i++) {
+    const x = Math.random() * 128;
+    const y = Math.random() * 128;
+    const r = Math.random() * 1.5 + 0.5;
+    const type = Math.random();
+    if (type < 0.3) {
+      pCtx.fillStyle = 'rgba(255, 255, 255, 0.12)'; // light sand/pebbles
+    } else if (type < 0.6) {
+      pCtx.fillStyle = 'rgba(0, 0, 0, 0.18)'; // dark dirt/shadows
+    } else {
+      pCtx.fillStyle = 'rgba(139, 115, 85, 0.35)'; // medium brown variation
+    }
+    pCtx.beginPath();
+    pCtx.arc(x, y, r, 0, Math.PI * 2);
+    pCtx.fill();
+  }
+  
+  const roadPattern = ctx.createPattern(patternCanvas, 'repeat')!;
+
+  // Soften the road edges with a drop shadow to blend naturally into the grass
+  ctx.shadowColor = '#3e3020';
+  ctx.shadowBlur = 12;
+
   // Draw Roundabout
   ctx.beginPath();
   ctx.arc(mapCoordX(0), mapCoordZ(0), (9.0 / S) * size, 0, Math.PI * 2);
-  ctx.fillStyle = '#655340';
+  ctx.fillStyle = roadPattern;
   ctx.fill();
   
   ctx.lineWidth = (5.2 / S) * size;
-  ctx.strokeStyle = '#655340';
+  ctx.strokeStyle = roadPattern;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
