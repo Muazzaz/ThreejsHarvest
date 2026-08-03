@@ -2,9 +2,65 @@ import { RigidBody } from '@react-three/rapier';
 import { useMemo } from 'react';
 import * as THREE from 'three';
 import { TERRAIN_SEGMENTS, TERRAIN_SIZE, getTerrainHeight } from '../../lib/terrain';
+import { SNAKE_ROAD_PATH_1, SNAKE_ROAD_PATH_2 } from './OrchardRoads';
+
+function createTerrainTexture(S: number): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  const size = 2048; // High resolution for crisp roads
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  
+  // Base grass color
+  ctx.fillStyle = '#3a7d44';
+  ctx.fillRect(0, 0, size, size);
+  
+  // Coordinate mapper: Terrain is S x S (-S/2 to S/2)
+  // X: -S/2 -> 0, +S/2 -> size
+  // Z: -S/2 -> 0, +S/2 -> size
+  // Note: Three.js PlaneGeometry with rotateX(-Math.PI/2) has Z axis pointing backwards (-Z is forward). 
+  // We map coordinates accordingly.
+  const mapCoordX = (val: number) => ((val + S / 2) / S) * size;
+  const mapCoordZ = (val: number) => ((val + S / 2) / S) * size;
+  
+  // Draw Roundabout
+  ctx.beginPath();
+  ctx.arc(mapCoordX(0), mapCoordZ(0), (9.0 / S) * size, 0, Math.PI * 2);
+  ctx.fillStyle = '#655340';
+  ctx.fill();
+  
+  ctx.lineWidth = (5.2 / S) * size;
+  ctx.strokeStyle = '#655340';
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  const drawPath = (path: [number, number][], closed: boolean) => {
+    const points3D = path.map(([x, z]) => new THREE.Vector3(x, 0, z));
+    const curve = new THREE.CatmullRomCurve3(points3D, closed, 'centripetal', 0.5);
+    const pts = curve.getSpacedPoints(400);
+    
+    ctx.beginPath();
+    ctx.moveTo(mapCoordX(pts[0].x), mapCoordZ(pts[0].z));
+    for (let i = 1; i < pts.length; i++) {
+      ctx.lineTo(mapCoordX(pts[i].x), mapCoordZ(pts[i].z));
+    }
+    if (closed) ctx.closePath();
+    ctx.stroke();
+  };
+
+  drawPath(SNAKE_ROAD_PATH_1, true);
+  drawPath(SNAKE_ROAD_PATH_2, true);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  // PlaneGeometry has standard UVs. To match top-down view properly:
+  texture.flipY = true;
+  return texture;
+}
 
 export default function Terrain() {
   const S = TERRAIN_SIZE;
+  const terrainMap = useMemo(() => createTerrainTexture(S), [S]);
 
   // Generate the rolling hills geometry dynamically using our noise function
   const visualGeometry = useMemo(() => {
@@ -43,8 +99,9 @@ export default function Terrain() {
       {/* Visual mesh (high poly) */}
       <mesh receiveShadow geometry={visualGeometry}>
         <meshStandardMaterial
-          color="#3a7d44"
-          roughness={0.72}
+          map={terrainMap}
+          color="#ffffff"
+          roughness={0.75}
           metalness={0.1}
           flatShading={false}
         />

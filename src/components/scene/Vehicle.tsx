@@ -225,7 +225,7 @@ export default function Vehicle({ headlightsIntensity = 8, isNight = false }: Ve
     }
 
     // Snap visual chassis to road/ground height under the car so it follows terrain and road surface
-    const targetVisualY = getTerrainHeight(pos.x, pos.z) + 0.06 + 0.58; // 0.06m road elevation + 0.58m tire radius offset
+    const targetVisualY = getTerrainHeight(pos.x, pos.z) + 0.01 + 0.58; // 0.01m road elevation + 0.58m tire radius offset
     _targetPos.set(pos.x, targetVisualY, pos.z);
 
     if (!_camInitialized) {

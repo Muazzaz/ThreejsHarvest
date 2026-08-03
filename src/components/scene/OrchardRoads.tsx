@@ -36,7 +36,6 @@ interface RoadMeshGroup {
   roadGeo: THREE.BufferGeometry;       // Pitch asphalt surface across full road width
   centerlineGeo: THREE.BufferGeometry; // Solid white center divider line (2-lane road divider matching ref image)
   edgelineGeo: THREE.BufferGeometry;   // Solid white outer boundary lines
-  curbGeo: THREE.BufferGeometry;       // Outer concrete shoulder curbs
   lampPositions: { x: number; z: number; rotY: number }[];
 }
 
@@ -63,14 +62,10 @@ function buildSnakeRoadGeometry(
   const edgeVerts: number[] = [];
   const edgeIndices: number[] = [];
 
-  const curbVerts: number[] = [];
-  const curbIndices: number[] = [];
-
   const lampPositions: { x: number; z: number; rotY: number }[] = [];
 
   const halfW = width / 2; // 2.6m half-width for 2-lane road
-  const curbW = 0.35;
-  const roadElevation = 0.15; // Increased elevation to prevent z-fighting with terrain interpolation
+  const roadElevation = 0.01; // Flush with terrain
   const lineHalfW = 0.08; // 0.16m wide painted line
   const WIDTH_STEPS = 4; // 4 sub-strips (5 vertices across width) to hug terrain curves across road
 
@@ -169,34 +164,6 @@ function buildSnakeRoadGeometry(
       edgeIndices.push(e3, e6, e7);
     }
 
-    // ── 4. Outer Concrete Shoulders / Curbs ──
-    const lx = pt.x + normX * halfW;
-    const lz = pt.z + normZ * halfW;
-    const rx = pt.x - normX * halfW;
-    const rz = pt.z - normZ * halfW;
-
-    const ly = getTerrainHeight(lx, lz) + roadElevation;
-    const ry = getTerrainHeight(rx, rz) + roadElevation;
-
-    const clx = pt.x + normX * (halfW + curbW);
-    const clz = pt.z + normZ * (halfW + curbW);
-    const crx = pt.x - normX * (halfW + curbW);
-    const crz = pt.z - normZ * (halfW + curbW);
-
-    const cly = getTerrainHeight(clx, clz) + roadElevation + 0.02;
-    const cry = getTerrainHeight(crx, crz) + roadElevation + 0.02;
-
-    const curbBase = curbVerts.length / 3;
-    curbVerts.push(lx, ly, lz, clx, cly, clz, rx, ry, rz, crx, cry, crz);
-
-    if (i < curvePoints.length - 1) {
-      curbIndices.push(curbBase, curbBase + 1, curbBase + 4);
-      curbIndices.push(curbBase + 1, curbBase + 5, curbBase + 4);
-
-      curbIndices.push(curbBase + 2, curbBase + 6, curbBase + 3);
-      curbIndices.push(curbBase + 3, curbBase + 6, curbBase + 7);
-    }
-
     // ── 5. Street Lamp Placements ──
     const distFromCenter = Math.sqrt(pt.x * pt.x + pt.z * pt.z);
     if (i % 52 === 12 && distFromCenter > 15.0) {
@@ -224,12 +191,7 @@ function buildSnakeRoadGeometry(
   edgelineGeo.setIndex(edgeIndices);
   edgelineGeo.computeVertexNormals();
 
-  const curbGeo = new THREE.BufferGeometry();
-  curbGeo.setAttribute('position', new THREE.Float32BufferAttribute(curbVerts, 3));
-  curbGeo.setIndex(curbIndices);
-  curbGeo.computeVertexNormals();
-
-  return { roadGeo, centerlineGeo, edgelineGeo, curbGeo, lampPositions };
+  return { roadGeo, centerlineGeo, edgelineGeo, lampPositions };
 }
 
 // Single Street Lamp component
@@ -369,69 +331,6 @@ export default function OrchardRoads() {
 
   return (
     <group>
-      {/* ── Central Pitch Roundabout Plaza ── */}
-      {/* Pitch Asphalt Driving Ring */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.20, 0]}>
-        <ringGeometry args={[3.5, 9.0, 48]} />
-        <meshStandardMaterial
-          color="#121318"
-          roughness={0.88}
-          metalness={0.05}
-          side={THREE.DoubleSide}
-          polygonOffset
-          polygonOffsetFactor={-5}
-          polygonOffsetUnits={-5}
-        />
-      </mesh>
-      {/* Roundabout Center Grass Island Curb */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.21, 0]}>
-        <ringGeometry args={[3.2, 3.5, 48]} />
-        <meshStandardMaterial color="#334155" roughness={0.6} />
-      </mesh>
-
-      {/* Roundabout Outer Concrete Curb */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.21, 0]}>
-        <ringGeometry args={[8.9, 9.4, 48]} />
-        <meshStandardMaterial color="#334155" roughness={0.6} />
-      </mesh>
-
-      {/* ── Snake Road 1 (Continuous Pitch Asphalt 2-Lane Highway) ── */}
-      {/* Pitch Asphalt Surface */}
-      <mesh receiveShadow geometry={road1.roadGeo}>
-        <meshStandardMaterial
-          color="#121318"
-          roughness={0.88}
-          metalness={0.05}
-          side={THREE.DoubleSide}
-          polygonOffset
-          polygonOffsetFactor={-5}
-          polygonOffsetUnits={-5}
-        />
-      </mesh>
-
-      {/* Outer Concrete Curbs */}
-      <mesh geometry={road1.curbGeo}>
-        <meshStandardMaterial color="#334155" roughness={0.6} side={THREE.DoubleSide} />
-      </mesh>
-
-      {/* ── Snake Road 2 (Continuous Pitch Asphalt 2-Lane Highway) ── */}
-      {/* Pitch Asphalt Surface */}
-      <mesh receiveShadow geometry={road2.roadGeo}>
-        <meshStandardMaterial
-          color="#121318"
-          roughness={0.88}
-          metalness={0.05}
-          side={THREE.DoubleSide}
-          polygonOffset
-          polygonOffsetFactor={-5}
-          polygonOffsetUnits={-5}
-        />
-      </mesh>
-
-      {/* Outer Concrete Curbs */}
-      <mesh geometry={road2.curbGeo}>
-        <meshStandardMaterial color="#334155" roughness={0.6} side={THREE.DoubleSide} />
-      </mesh>
 
       {/* ── Street Lamps Along Snake Roads ── */}
       {road1.lampPositions.map((lamp, i) => (
