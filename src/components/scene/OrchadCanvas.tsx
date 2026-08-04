@@ -9,6 +9,7 @@ import Orchard from './Orchard';
 import OrchardRoads from './OrchardRoads';
 import Terrain from './Terrain';
 import Vehicle from './Vehicle';
+import ModernHouse from './ModernHouse';
 
 function SceneContent({ timeConfig }: { timeConfig: TimeConfig }) {
   useVehicleControls(); // register key listeners
@@ -65,6 +66,7 @@ function SceneContent({ timeConfig }: { timeConfig: TimeConfig }) {
       <Terrain />
       <OrchardRoads />
       <Orchard />
+      <ModernHouse x={-15} z={0} rotationY={Math.PI / 2} isNight={timeConfig.isNight} />
       <Vehicle headlightsIntensity={timeConfig.headlightsIntensity} isNight={timeConfig.isNight} />
     </Physics>
   );
